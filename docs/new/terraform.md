@@ -30,8 +30,6 @@ CloudWatch Logs → 各 Lambda のログ確認用
 
 これを Terraform でモジュール分割して管理するときは、
 
-networking/（必要なら VPC）
-
 iam/
 
 dynamodb/

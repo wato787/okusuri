@@ -1,0 +1,113 @@
+terraform {
+  required_version = ">= 1.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  # S3 + DynamoDB で remote state 管理（一時的にコメントアウト）
+  # backend "s3" {
+  #   bucket         = "okusuri-terraform-state"
+  #   key            = "infra/terraform.tfstate"
+  #   region         = "ap-northeast-1"
+  #   dynamodb_table = "okusuri-terraform-locks"
+  #   encrypt        = true
+  # }
+}
+
+# AWS プロバイダー設定
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "okusuri"
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
+# データソース
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+# モジュール呼び出し
+module "iam" {
+  source = "./modules/iam"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+}
+
+module "dynamodb" {
+  source = "./modules/dynamodb"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+}
+
+module "cognito" {
+  source = "./modules/cognito"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+  
+  google_client_id     = var.google_client_id
+  google_client_secret = var.google_client_secret
+}
+
+module "lambda" {
+  source = "./modules/lambda"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+  
+  cognito_user_pool_id = module.cognito.user_pool_id
+  dynamodb_table_name  = module.dynamodb.table_name
+  iam_role_arn         = module.iam.lambda_role_arn
+}
+
+module "apigateway" {
+  source = "./modules/apigateway"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+  
+  cognito_user_pool_id = module.cognito.user_pool_id
+  cognito_client_id    = module.cognito.client_id
+  lambda_function_arn  = module.lambda.api_function_arn
+  lambda_function_name = module.lambda.api_function_name
+}
+
+module "eventbridge" {
+  source = "./modules/eventbridge"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+  
+  lambda_function_arn  = module.lambda.notification_function_arn
+  lambda_function_name = module.lambda.notification_function_name
+  iam_role_arn         = module.iam.eventbridge_role_arn
+}
+
+module "cloudwatch" {
+  source = "./modules/cloudwatch"
+  
+  environment = var.environment
+  project     = var.project
+  
+  lambda_function_names = [
+    module.lambda.api_function_name,
+    module.lambda.notification_function_name
+  ]
+}
