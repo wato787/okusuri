@@ -80,4 +80,3 @@ func (h *NotificationHandler) RegisterSetting(c *gin.Context) {
 		Message: "notification setting registered successfully",
 	})
 }
-

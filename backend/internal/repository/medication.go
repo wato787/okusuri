@@ -23,8 +23,13 @@ func NewMedicationRepository() *MedicationRepository {
 	}
 }
 
-// RegisterLog はユーザーの服用記録をDynamoDBに登録する
+// RegisterLog はユーザーの服用記録をDynamoDBに登録する（後方互換性）
 func (r *MedicationRepository) RegisterLog(userID string, log model.MedicationLog) error {
+	return r.RegisterLogWithContext(context.Background(), userID, log)
+}
+
+// RegisterLogWithContext はユーザーの服用記録をDynamoDBに登録する
+func (r *MedicationRepository) RegisterLogWithContext(ctx context.Context, userID string, log model.MedicationLog) error {
 	// DynamoDBの単一テーブル設計に基づくキー生成
 	pk := fmt.Sprintf("USER#%s", userID)
 	sk := fmt.Sprintf("MEDICATION#%s#%d", log.CreatedAt.Format("2006-01-02"), time.Now().UnixNano())
@@ -44,18 +49,23 @@ func (r *MedicationRepository) RegisterLog(userID string, log model.MedicationLo
 	}
 
 	// DynamoDBに保存
-	err := r.table.Put(item).Run(context.Background())
+	err := r.table.Put(item).Run(ctx)
 	return err
 }
 
-// GetLogsByUserID はユーザーIDに基づいて服用履歴をDynamoDBから取得する
+// GetLogsByUserID はユーザーIDに基づいて服用履歴をDynamoDBから取得する（後方互換性）
 func (r *MedicationRepository) GetLogsByUserID(userID string) ([]model.MedicationLog, error) {
+	return r.GetLogsByUserIDWithContext(context.Background(), userID)
+}
+
+// GetLogsByUserIDWithContext はユーザーIDに基づいて服用履歴をDynamoDBから取得する
+func (r *MedicationRepository) GetLogsByUserIDWithContext(ctx context.Context, userID string) ([]model.MedicationLog, error) {
 	pk := fmt.Sprintf("USER#%s", userID)
 
 	var results []model.OkusuriTable
 	err := r.table.Get("PK", pk).
 		Filter("begins_with(SK, ?)", "MEDICATION#").
-		All(context.Background(), &results)
+		All(ctx, &results)
 
 	if err != nil {
 		return nil, err

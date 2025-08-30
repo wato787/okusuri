@@ -72,5 +72,4 @@ func (r *NotificationRepository) RegisterSetting(userID string, setting model.No
 	return err
 }
 
-
 // ヘルパー関数はmedication.goで定義済み

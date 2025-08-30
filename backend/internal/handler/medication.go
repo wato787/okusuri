@@ -6,11 +6,13 @@ import (
 	"okusuri-backend/internal/model"
 	"okusuri-backend/internal/repository"
 	"okusuri-backend/internal/service"
+	"okusuri-backend/pkg/errors"
 	"okusuri-backend/pkg/helper"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type MedicationHandler struct {
@@ -27,16 +29,21 @@ func (h *MedicationHandler) RegisterLog(c *gin.Context) {
 	// ユーザーIDを取得
 	userID, err := helper.GetUserIDFromContext(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		errors.HandleBadRequest(c, "無効なユーザーIDです", err)
 		return
 	}
 
 	// リクエストボディを構造体にバインド
 	var req dto.MedicationLogRequest
 	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		errors.HandleValidationError(c, "リクエストボディが無効です", bindErr)
 		return
 	}
+
+	log.Info().
+		Str("user_id", userID).
+		Bool("has_bleeding", req.HasBleeding).
+		Msg("服用記録の登録を開始します")
 
 	medicationLog := model.MedicationLog{
 		HasBleeding: req.HasBleeding,
@@ -49,14 +56,22 @@ func (h *MedicationHandler) RegisterLog(c *gin.Context) {
 		medicationLog.CreatedAt = *req.Date
 	}
 
-	// リポジトリを直接呼び出す
-	err = h.medicationRepo.RegisterLog(userID, medicationLog)
+	// リポジトリを呼び出す
+	ctx := c.Request.Context()
+	err = h.medicationRepo.RegisterLogWithContext(ctx, userID, medicationLog)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register medication log"})
+		errors.HandleDatabaseError(c, "服用記録登録", err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "medication log registered successfully"})
+	log.Info().
+		Str("user_id", userID).
+		Msg("服用記録の登録が完了しました")
+
+	c.JSON(200, dto.BaseResponse{
+		Success: true,
+		Message: "medication log registered successfully",
+	})
 }
 
 // GetLogs はユーザーの服用記録を取得するハンドラー
@@ -64,18 +79,28 @@ func (h *MedicationHandler) GetLogs(c *gin.Context) {
 	// ユーザーIDを取得
 	userID, err := helper.GetUserIDFromContext(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		errors.HandleBadRequest(c, "無効なユーザーIDです", err)
 		return
 	}
+
+	log.Debug().
+		Str("user_id", userID).
+		Msg("服用記録の取得を開始します")
 
 	// 服用記録を取得
-	logs, err := h.medicationRepo.GetLogsByUserID(userID)
+	ctx := c.Request.Context()
+	logs, err := h.medicationRepo.GetLogsByUserIDWithContext(ctx, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get medication logs"})
+		errors.HandleDatabaseError(c, "服用記録取得", err)
 		return
 	}
 
-	c.JSON(http.StatusOK, logs)
+	log.Info().
+		Str("user_id", userID).
+		Int("count", len(logs)).
+		Msg("服用記録の取得が完了しました")
+
+	c.JSON(200, logs)
 }
 
 // GetLogByID は特定のIDの服薬ログを取得するハンドラー
