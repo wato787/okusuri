@@ -35,6 +35,8 @@ resource "aws_lambda_function" "notification" {
       AWS_REGION         = var.aws_region
       DYNAMODB_TABLE_NAME = var.dynamodb_table_name
       COGNITO_USER_POOL_ID = var.cognito_user_pool_id
+      VAPID_PUBLIC_KEY   = var.vapid_public_key
+      VAPID_PRIVATE_KEY  = var.vapid_private_key
       LOG_LEVEL          = "INFO"
     }
   }

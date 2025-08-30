@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"sync"
 	"time"
 
+	"okusuri-notification/pkg/config"
+
 	webpush "github.com/SherClockHolmes/webpush-go"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 	"github.com/guregu/dynamo/v2"
@@ -84,7 +85,7 @@ type Repository struct {
 
 func NewRepository(db *dynamo.DB, cognitoClient *cognitoidentityprovider.Client) *Repository {
 	return &Repository{
-		table:         db.Table("okusuri-table"),
+		table:         db.Table(config.GetDynamoDBTableName()),
 		cognitoClient: cognitoClient,
 	}
 }
@@ -93,7 +94,7 @@ func NewRepository(db *dynamo.DB, cognitoClient *cognitoidentityprovider.Client)
 func (r *Repository) GetUsers() ([]User, error) {
 	// CognitoのListUsers APIを呼び出し
 	input := &cognitoidentityprovider.ListUsersInput{
-		UserPoolId: &[]string{os.Getenv("COGNITO_USER_POOL_ID")}[0],
+		UserPoolId: &[]string{config.GetCognitoUserPoolID()}[0],
 	}
 
 	result, err := r.cognitoClient.ListUsers(context.Background(), input)
@@ -278,8 +279,8 @@ func (s *NotificationService) SendNotificationWithDays(
 		return nil
 	}
 
-	vapidPublicKey := os.Getenv("VAPID_PUBLIC_KEY")
-	vapidPrivateKey := os.Getenv("VAPID_PRIVATE_KEY")
+	vapidPublicKey := config.GetVAPIDPublicKey()
+	vapidPrivateKey := config.GetVAPIDPrivateKey()
 
 	if vapidPublicKey == "" || vapidPrivateKey == "" {
 		log.Printf("VAPID鍵が設定されていません")
@@ -427,7 +428,7 @@ func handleRequest(ctx context.Context, event interface{}) (interface{}, error) 
 	log.Printf("========== 通知送信処理開始 [%s] ==========", requestTime.Format("2006-01-02 15:04:05"))
 
 	// AWS設定
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
 		log.Printf("AWS設定エラー: %v", err)
 		return nil, fmt.Errorf("AWS設定エラー: %v", err)

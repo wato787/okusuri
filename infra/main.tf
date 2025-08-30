@@ -82,6 +82,9 @@ module "lambda" {
   cognito_user_pool_id = module.cognito.user_pool_id
   dynamodb_table_name  = module.dynamodb.table_name
   iam_role_arn         = module.iam.lambda_role_arn
+  
+  vapid_public_key     = var.vapid_public_key
+  vapid_private_key    = var.vapid_private_key
 }
 
 module "apigateway" {

@@ -112,3 +112,16 @@ variable "notification_zip_path" {
   type        = string
   default     = "dist/lambda/notification.zip"
 }
+
+# VAPID鍵設定（Push通知用）
+variable "vapid_public_key" {
+  description = "VAPID public key for push notifications"
+  type        = string
+  sensitive   = true
+}
+
+variable "vapid_private_key" {
+  description = "VAPID private key for push notifications"
+  type        = string
+  sensitive   = true
+}

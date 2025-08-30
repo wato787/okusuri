@@ -57,3 +57,15 @@ variable "memory_size" {
   type        = number
   default     = 512
 }
+
+variable "vapid_public_key" {
+  description = "VAPID public key for push notifications"
+  type        = string
+  sensitive   = true
+}
+
+variable "vapid_private_key" {
+  description = "VAPID private key for push notifications"
+  type        = string
+  sensitive   = true
+}
