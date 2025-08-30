@@ -14,8 +14,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
-terraform.tfvars
-terraform.tfstate
+
 
 # Logs
 npm-debug.log*
@@ -113,3 +112,10 @@ go.work
 *.db
 *.sqlite
 *.sqlite3
+
+# Terraform
+terraform.tfvars
+terraform.tfstate
+.terraform/
+*.tfstate
+*.tfstate.*
