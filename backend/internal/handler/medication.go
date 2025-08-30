@@ -8,6 +8,7 @@ import (
 	"okusuri-backend/internal/service"
 	"okusuri-backend/pkg/helper"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,8 +39,9 @@ func (h *MedicationHandler) RegisterLog(c *gin.Context) {
 	}
 
 	medicationLog := model.MedicationLog{
-		UserID:      userID,
 		HasBleeding: req.HasBleeding,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// 日付が指定されている場合は、その日付を使用
@@ -163,5 +165,3 @@ func (h *MedicationHandler) GetMedicationStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, status)
 }
-
-

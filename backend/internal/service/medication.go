@@ -236,7 +236,3 @@ func (s *MedicationService) countConsecutiveDays(dates []time.Time, restEndDate 
 	}
 	return streak
 }
-
-
-
-

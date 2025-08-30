@@ -264,11 +264,17 @@ tasks:
     cmds:
       - echo "=== Okusuri Project Status ==="
       - echo "Frontend (Next.js):"
-      - cd frontend && pnpm list --depth=0 | head -1
+      - cd frontend
+      - pnpm list --depth=0 | head -1
+      - cd ..
       - echo "Frontend V2 (Vite):"
-      - cd okusuri-v2 && pnpm list --depth=0 | head -1
+      - cd okusuri-v2
+      - pnpm list --depth=0 | head -1
+      - cd ..
       - echo "Backend (Go):"
-      - cd backend && go version
+      - cd backend
+      - go version
+      - cd ..
       - echo "================================"
 
   # ヘルプ
@@ -283,4 +289,3 @@ tasks:
       - echo "  task help          - Show this help"
       - echo ""
       - echo "For specific tasks, use: task --list"
-

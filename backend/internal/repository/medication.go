@@ -1,40 +1,75 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"okusuri-backend/internal/model"
 	"okusuri-backend/pkg/config"
 	"time"
+
+	"github.com/guregu/dynamo/v2"
 )
 
-type MedicationRepository struct{}
+type MedicationRepository struct {
+	table dynamo.Table
+}
 
 func NewMedicationRepository() *MedicationRepository {
-	return &MedicationRepository{}
+	db := config.GetDB()
+	table := db.Table("okusuri-table")
+
+	return &MedicationRepository{
+		table: table,
+	}
 }
 
-// RegisterLog はユーザーの服用記録をデータベースに登録する
+// RegisterLog はユーザーの服用記録をDynamoDBに登録する
 func (r *MedicationRepository) RegisterLog(userID string, log model.MedicationLog) error {
-	// DB接続
-	db := config.DB
+	// DynamoDBの単一テーブル設計に基づくキー生成
+	pk := fmt.Sprintf("USER#%s", userID)
+	sk := fmt.Sprintf("MEDICATION#%s#%d", log.CreatedAt.Format("2006-01-02"), time.Now().UnixNano())
 
-	// ユーザーIDに基づいて服用履歴を登録
-	if err := db.Create(&log).Error; err != nil {
-		return err
+	// OkusuriTable形式でデータを保存
+	item := model.OkusuriTable{
+		PK:   pk,
+		SK:   sk,
+		Date: log.CreatedAt.Format("2006-01-02"),
+		Data: map[string]interface{}{
+			"hasBleeding": log.HasBleeding,
+			"createdAt":   log.CreatedAt.Format(time.RFC3339),
+			"updatedAt":   log.UpdatedAt.Format(time.RFC3339),
+		},
+		CreatedAt: log.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: log.UpdatedAt.Format(time.RFC3339),
 	}
 
-	return nil
+	// DynamoDBに保存
+	err := r.table.Put(item).Run(context.Background())
+	return err
 }
 
-// GetLogsByUserID はユーザーIDに基づいて服用履歴をデータベースから取得する
+// GetLogsByUserID はユーザーIDに基づいて服用履歴をDynamoDBから取得する
 func (r *MedicationRepository) GetLogsByUserID(userID string) ([]model.MedicationLog, error) {
-	// DB接続
-	db := config.DB
+	pk := fmt.Sprintf("USER#%s", userID)
 
-	// ユーザーIDに基づいて服用履歴を取得
-	var logs []model.MedicationLog
-	if err := db.Where("user_id = ?", userID).Find(&logs).Error; err != nil {
+	var results []model.OkusuriTable
+	err := r.table.Get("PK", pk).
+		Filter("begins_with(SK, ?)", "MEDICATION#").
+		All(context.Background(), &results)
+
+	if err != nil {
 		return nil, err
+	}
+
+	// OkusuriTableからMedicationLogに変換
+	var logs []model.MedicationLog
+	for _, result := range results {
+		log := model.MedicationLog{
+			HasBleeding: getBoolValue(result.Data, "hasBleeding", false),
+			CreatedAt:   parseTime(getStringValue(result.Data, "createdAt", "")),
+			UpdatedAt:   parseTime(getStringValue(result.Data, "updatedAt", "")),
+		}
+		logs = append(logs, log)
 	}
 
 	return logs, nil
@@ -42,49 +77,44 @@ func (r *MedicationRepository) GetLogsByUserID(userID string) ([]model.Medicatio
 
 // GetLogByID はIDに基づいて単一の服薬ログを取得する
 func (r *MedicationRepository) GetLogByID(userID string, logID uint) (*model.MedicationLog, error) {
-	// DB接続
-	db := config.DB
-
-	// ユーザーIDとログIDに基づいて服薬履歴を取得
-	var log model.MedicationLog
-	if err := db.Where("id = ? AND user_id = ?", logID, userID).First(&log).Error; err != nil {
+	// DynamoDBでは直接的なID検索は困難なため、ユーザーの全ログから検索
+	logs, err := r.GetLogsByUserID(userID)
+	if err != nil {
 		return nil, err
 	}
 
-	return &log, nil
+	// 簡易的なID検索（実際の運用では別の方法を検討）
+	for _, log := range logs {
+		// TODO: より効率的なID検索の実装
+		if log.CreatedAt.Unix() == int64(logID) {
+			return &log, nil
+		}
+	}
+
+	return nil, fmt.Errorf("log not found")
 }
 
 // UpdateLog は指定されたIDの服薬ログを更新する
 func (r *MedicationRepository) UpdateLog(userID string, logID uint, hasBleeding bool) error {
-	// DB接続
-	db := config.DB
+	// DynamoDBでの更新操作
+	pk := fmt.Sprintf("USER#%s", userID)
+	sk := fmt.Sprintf("MEDICATION#%s#%d", time.Now().Format("2006-01-02"), logID)
 
-	// ユーザーIDとログIDに基づいてログを更新
-	result := db.Model(&model.MedicationLog{}).
-		Where("id = ? AND user_id = ?", logID, userID).
-		Update("has_bleeding", hasBleeding)
+	// DynamoDBのUpdate操作
+	err := r.table.Update("PK", pk).
+		Range("SK", sk).
+		Set("Data.hasBleeding", hasBleeding).
+		Set("Data.updatedAt", time.Now().Format(time.RFC3339)).
+		Set("UpdatedAt", time.Now().Format(time.RFC3339)).
+		Run(context.Background())
 
-	if result.Error != nil {
-		return result.Error
-	}
-
-	// 更新された行数が0の場合は、ログが見つからないエラーを返す
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("log not found or user not authorized")
-	}
-
-	return nil
+	return err
 }
 
 // GetConsecutiveDays はユーザーの連続服薬日数を計算する
 func (r *MedicationRepository) GetConsecutiveDays(userID string) (int, error) {
-	db := config.DB
-
-	// ユーザーの服薬ログを日付降順で取得
-	var logs []model.MedicationLog
-	if err := db.Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Find(&logs).Error; err != nil {
+	logs, err := r.GetLogsByUserID(userID)
+	if err != nil {
 		return 0, err
 	}
 
@@ -98,27 +128,49 @@ func (r *MedicationRepository) GetConsecutiveDays(userID string) (int, error) {
 
 	// 最新の記録が今日かどうかチェック
 	latestLog := logs[0]
-	latestDate := latestLog.CreatedAt.Truncate(24 * time.Hour)
-
-	// 最新の記録が今日でない場合は連続日数は0
-	if !latestDate.Equal(today) {
+	if !latestLog.CreatedAt.Truncate(24 * time.Hour).Equal(today) {
 		return 0, nil
 	}
 
-	// 前日から遡って連続日数をカウント
-	expectedDate := today.AddDate(0, 0, -1)
-
+	// 連続日数を計算
 	for i := 1; i < len(logs); i++ {
-		logDate := logs[i].CreatedAt.Truncate(24 * time.Hour)
+		currentLog := logs[i]
+		previousLog := logs[i-1]
 
-		if logDate.Equal(expectedDate) {
+		// 日付の差が1日かチェック
+		diff := currentLog.CreatedAt.Truncate(24 * time.Hour).Sub(previousLog.CreatedAt.Truncate(24 * time.Hour))
+		if diff == 24*time.Hour {
 			consecutiveDays++
-			expectedDate = expectedDate.AddDate(0, 0, -1)
 		} else {
-			// 連続していない場合は終了
 			break
 		}
 	}
 
 	return consecutiveDays, nil
+}
+
+// ヘルパー関数
+func getBoolValue(data map[string]interface{}, key string, defaultValue bool) bool {
+	if value, ok := data[key].(bool); ok {
+		return value
+	}
+	return defaultValue
+}
+
+func getStringValue(data map[string]interface{}, key string, defaultValue string) string {
+	if value, ok := data[key].(string); ok {
+		return value
+	}
+	return defaultValue
+}
+
+func parseTime(timeStr string) time.Time {
+	if timeStr == "" {
+		return time.Now()
+	}
+	t, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		return time.Now()
+	}
+	return t
 }

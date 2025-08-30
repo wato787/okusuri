@@ -1,35 +1,22 @@
 package middleware
 
 import (
-	"okusuri-backend/internal/repository"
-
 	"github.com/gin-gonic/gin"
 )
 
-func Auth(userRepository *repository.UserRepository) gin.HandlerFunc {
+// CognitoAuth はAPI GatewayのCognito認証から渡されるユーザーIDを検証するミドルウェア
+func CognitoAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Bearerトークンを取得
-		authHeader := c.Request.Header.Get("Authorization")
-		if authHeader == "" {
-			c.JSON(401, gin.H{"error": "Authorization header is required"})
+		// API GatewayのCognito認証から渡されるユーザーID
+		userID := c.Request.Header.Get("X-Cognito-User-Id")
+		if userID == "" {
+			c.JSON(401, gin.H{"error": "Cognito user ID not found in request header"})
 			c.Abort()
 			return
 		}
-		token := authHeader[len("Bearer "):]
-		if token == "" {
-			c.JSON(401, gin.H{"error": "Token is required"})
-			c.Abort()
-			return
-		}
-		// sessionテーブルのtokenと一致するレコードを取得
-		user, err := userRepository.GetUserByToken(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid token"})
-			c.Abort()
-			return
-		}
-		// ユーザー情報をコンテキストに保存
-		c.Set("user", user)
+
+		// Cognitoユーザー情報をコンテキストに保存
+		c.Set("cognitoUserID", userID)
 
 		c.Next()
 	}

@@ -1,5 +1,6 @@
 # Go binaries
 main
+server
 *-lambda
 backend-lambda
 
