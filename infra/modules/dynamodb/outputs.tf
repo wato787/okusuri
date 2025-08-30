@@ -13,12 +13,13 @@ output "table_id" {
   value       = aws_dynamodb_table.main.id
 }
 
-output "backup_vault_arn" {
-  description = "Backup vault ARN"
-  value       = aws_backup_vault.dynamodb.arn
-}
+# 個人用のため無効化
+# output "backup_vault_arn" {
+#   description = "Backup vault ARN"
+#   value       = aws_backup_vault.dynamodb.arn
+# }
 
-output "backup_plan_arn" {
-  description = "Backup plan ARN"
-  value       = aws_backup_plan.dynamodb.arn
-}
+# output "backup_plan_arn" {
+#   description = "Backup plan ARN"
+#   value       = aws_backup_plan.dynamodb.arn
+# }

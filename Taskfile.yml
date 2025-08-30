@@ -43,10 +43,47 @@ tasks:
     cmds:
       - terraform plan
 
-  # CD環境用
-  deploy:
-    desc: Deploy everything including Lambda functions (CD only)
-    deps: [build:all, terraform:init]
+  terraform:apply:
+    desc: Create basic infrastructure (local)
+    deps: [terraform:init]
     dir: infra
     cmds:
       - terraform apply -auto-approve
+
+  # 統合デプロイタスク
+  deploy:
+    desc: Build and deploy everything (build → ECR push → Lambda deploy → EventBridge setup)
+    deps: [build:all]
+    cmds:
+      - ./scripts/deploy-full.sh
+
+  deploy:api:
+    desc: Deploy only API Lambda (build → ECR push → update)
+    deps: [build:lambda:api]
+    cmds:
+      - ./scripts/deploy-api.sh
+
+  deploy:notification:
+    desc: Deploy only notification Lambda (build → update)
+    deps: [build:lambda:notification]
+    cmds:
+      - ./scripts/deploy-notification.sh
+
+  # 監視・ログ確認タスク
+  logs:api:
+    desc: View API Lambda logs
+    dir: infra
+    cmds:
+      - ./scripts/logs-api.sh
+
+  logs:notification:
+    desc: View notification Lambda logs
+    dir: infra
+    cmds:
+      - ./scripts/logs-notification.sh
+
+  status:
+    desc: Check deployment status and costs
+    dir: infra
+    cmds:
+      - ./scripts/status.sh

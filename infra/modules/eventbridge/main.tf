@@ -1,4 +1,4 @@
-# EventBridge Scheduler
+# EventBridge Scheduler（毎日09:00の通知Lambda発火は必須）
 resource "aws_scheduler_schedule" "notification" {
   name                = "${var.project}-${var.environment}-notification-schedule"
   group_name          = "default"

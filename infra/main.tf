@@ -23,7 +23,6 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = "okusuri"
-      Environment = var.environment
       ManagedBy   = "terraform"
     }
   }
@@ -61,6 +60,14 @@ module "iam" {
   common_tags = var.common_tags
 }
 
+module "ecr" {
+  source = "./modules/ecr"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+}
+
 module "lambda" {
   source = "./modules/lambda"
   
@@ -68,7 +75,7 @@ module "lambda" {
   project     = var.project
   common_tags = var.common_tags
   
-  api_image_uri        = var.api_image_uri
+  api_image_uri        = "${module.ecr.repository_url}:latest"
   notification_zip_path = var.notification_zip_path
   
   cognito_user_pool_id = module.cognito.user_pool_id

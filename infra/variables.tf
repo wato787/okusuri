@@ -8,7 +8,7 @@ variable "aws_region" {
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "dev"
+  default     = "production"
 }
 
 variable "project" {
@@ -92,7 +92,7 @@ variable "api_gateway_stage_name" {
 variable "notification_schedule" {
   description = "Notification schedule (cron expression)"
   type        = string
-  default     = "cron(0 9 * * ? *)"  # 毎日9:00
+  default     = "cron(0 22 * * ? *)"  # 毎日22:00（夜10時）
 }
 
 # タグ設定
@@ -101,18 +101,12 @@ variable "common_tags" {
   type        = map(string)
   default = {
     Project     = "okusuri"
-    Environment = "dev"
+    Environment = "production"
     ManagedBy   = "terraform"
   }
 }
 
-# Lambda イメージ・パッケージ設定
-variable "api_image_uri" {
-  description = "ECR image URI for API Lambda"
-  type        = string
-  default     = ""  # デプロイ時に上書きされる
-}
-
+# Lambda パッケージ設定
 variable "notification_zip_path" {
   description = "Path to notification Lambda deployment package"
   type        = string

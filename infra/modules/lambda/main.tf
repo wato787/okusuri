@@ -4,8 +4,8 @@ resource "aws_lambda_function" "api" {
   role            = var.iam_role_arn
   package_type    = "Image"
   image_uri       = var.api_image_uri
-  timeout         = 30
-  memory_size     = 512
+  timeout         = var.timeout
+  memory_size     = var.memory_size
 
   environment {
     variables = {
@@ -79,12 +79,12 @@ resource "aws_lambda_function_url" "notification" {
 # Lambda 関数の更新設定
 resource "aws_lambda_function_event_invoke_config" "api" {
   function_name                = aws_lambda_function.api.function_name
-  maximum_event_age_in_seconds = 60
+  maximum_event_age_in_seconds = 60  # 最小値は60秒
   maximum_retry_attempts       = 0
 }
 
 resource "aws_lambda_function_event_invoke_config" "notification" {
   function_name                = aws_lambda_function.notification.function_name
-  maximum_event_age_in_seconds = 60
+  maximum_event_age_in_seconds = 60  # 最小値は60秒
   maximum_retry_attempts       = 0
 }

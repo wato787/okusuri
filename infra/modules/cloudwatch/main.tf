@@ -3,12 +3,12 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
   for_each = toset(var.lambda_function_names)
 
   name              = "/aws/lambda/${each.value}"
-  retention_in_days = 14
+  retention_in_days = 7  # 個人用のため短縮
   
   tags = var.common_tags
 }
 
-# CloudWatch アラーム（Lambda エラー率）
+# CloudWatch アラーム（料金監視のため復活）
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = toset(var.lambda_function_names)
 
@@ -30,7 +30,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   tags = var.common_tags
 }
 
-# CloudWatch アラーム（Lambda 実行時間）
 resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
   for_each = toset(var.lambda_function_names)
 
@@ -41,7 +40,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
   namespace           = "AWS/Lambda"
   period              = 300
   statistic           = "Average"
-  threshold           = 25000  # 25秒
+  threshold           = 15000  # 15秒（個人用のため短縮）
   alarm_description   = "Lambda function execution duration"
   alarm_actions       = var.sns_topic_arn != null ? [var.sns_topic_arn] : []
 
@@ -52,7 +51,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
   tags = var.common_tags
 }
 
-# CloudWatch ダッシュボード
+# CloudWatch ダッシュボード（料金監視のため復活）
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "${var.project}-${var.environment}-dashboard"
 

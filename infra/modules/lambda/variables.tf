@@ -6,6 +6,7 @@ variable "project" {
 variable "environment" {
   description = "Environment name"
   type        = string
+  default     = "production"
 }
 
 variable "common_tags" {
@@ -37,4 +38,16 @@ variable "notification_zip_path" {
   description = "Path to notification Lambda deployment package"
   type        = string
   default     = "../dist/notification.zip"
+}
+
+variable "timeout" {
+  description = "Lambda timeout in seconds"
+  type        = number
+  default     = 30
+}
+
+variable "memory_size" {
+  description = "Lambda memory size in MB"
+  type        = number
+  default     = 512
 }

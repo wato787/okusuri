@@ -79,6 +79,31 @@ resource "aws_iam_role_policy_attachment" "lambda_cognito" {
   policy_arn = aws_iam_policy.cognito_access.arn
 }
 
+# ECR アクセスポリシー
+resource "aws_iam_policy" "ecr_access" {
+  name = "${var.project}-${var.environment}-ecr-access"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_ecr" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.ecr_access.arn
+}
+
 # EventBridge ロール
 resource "aws_iam_role" "eventbridge_role" {
   name = "${var.project}-${var.environment}-eventbridge-role"
