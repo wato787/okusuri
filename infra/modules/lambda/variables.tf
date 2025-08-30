@@ -29,7 +29,7 @@ variable "dynamodb_table_name" {
 }
 
 variable "runtime" {
-  description = "Lambda runtime"
+  description = "Lambda runtime for notification function"
   type        = string
   default     = "provided.al2"
 }
@@ -46,10 +46,9 @@ variable "memory_size" {
   default     = 512
 }
 
-variable "api_zip_path" {
-  description = "Path to API Lambda deployment package"
+variable "api_image_uri" {
+  description = "ECR image URI for API Lambda function"
   type        = string
-  default     = "../dist/api.zip"
 }
 
 variable "notification_zip_path" {

@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+CLAUDE.md
+docs/
+
+# Development files
+.env
+.env.example
+.air.toml
+.editorconfig
+.golangci.yml
+.vscode/
+check_air.sh
+hotreload.sh
+test_notification.sh
+
+# Build artifacts
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test files
+*_test.go
+testdata/

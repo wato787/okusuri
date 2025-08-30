@@ -1,10 +1,9 @@
-# API用 Lambda 関数
+# API用 Lambda 関数（コンテナイメージ）
 resource "aws_lambda_function" "api" {
-  filename         = var.api_zip_path
   function_name    = "${var.project}-${var.environment}-api"
   role            = var.iam_role_arn
-  handler         = "bootstrap"
-  runtime         = var.runtime
+  package_type    = "Image"
+  image_uri       = var.api_image_uri
   timeout         = var.timeout
   memory_size     = var.memory_size
 
@@ -20,12 +19,12 @@ resource "aws_lambda_function" "api" {
   tags = var.common_tags
 }
 
-# 通知用 Lambda 関数
+# 通知用 Lambda 関数（ZIPパッケージ）
 resource "aws_lambda_function" "notification" {
   filename         = var.notification_zip_path
   function_name    = "${var.project}-${var.environment}-notification"
   role            = var.iam_role_arn
-  handler         = "bootstrap"
+  handler         = "notification"
   runtime         = var.runtime
   timeout         = var.timeout
   memory_size     = var.memory_size
