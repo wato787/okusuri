@@ -82,20 +82,18 @@ resource "aws_cognito_user_pool_client" "main" {
   name = var.client_name
   user_pool_id = aws_cognito_user_pool.main.id
 
-  # 認証フロー
+  # 認証フロー（Google OAuthのみ）
   generate_secret = false
   explicit_auth_flows = [
-    "ALLOW_USER_PASSWORD_AUTH",
-    "ALLOW_REFRESH_TOKEN_AUTH",
-    "ALLOW_USER_SRP_AUTH"
+    "ALLOW_REFRESH_TOKEN_AUTH"
   ]
 
   # コールバックURL
   callback_urls = var.callback_urls
   logout_urls   = var.logout_urls
 
-  # サポートするIDプロバイダー
-  supported_identity_providers = ["COGNITO", "Google"]
+  # サポートするIDプロバイダー（Google OAuthのみ）
+  supported_identity_providers = ["Google"]
 
   # トークン有効期限
   access_token_validity  = 1    # 1時間

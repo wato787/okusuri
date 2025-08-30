@@ -15,6 +15,11 @@ resource "aws_dynamodb_table" "main" {
     type = "S"
   }
 
+  attribute {
+    name = "Date"
+    type = "S"
+  }
+
   # GSI1: DateIndex（日付検索用）
   global_secondary_index {
     name            = "DateIndex"

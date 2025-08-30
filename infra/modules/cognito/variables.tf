@@ -48,7 +48,7 @@ variable "callback_urls" {
   type        = list(string)
   default = [
     "http://localhost:3000/auth/callback",
-    "https://your-domain.vercel.app/auth/callback"
+    "https://okusuri.vercel.app/auth/callback"
   ]
 }
 
@@ -56,7 +56,7 @@ variable "logout_urls" {
   description = "Logout URLs"
   type        = list(string)
   default = [
-    "http://localhost:3000/auth/logout",
-    "https://your-domain.vercel.app/auth/logout"
+    "http://localhost:3000/",
+    "https://okusuri.vercel.app/"
   ]
 }

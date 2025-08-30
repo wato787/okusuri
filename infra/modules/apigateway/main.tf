@@ -6,9 +6,9 @@ resource "aws_apigatewayv2_api" "main" {
 
   cors_configuration {
     allow_credentials = true
-    allow_headers     = ["*"]
+    allow_headers     = ["Content-Type", "Authorization", "X-Requested-With"]
     allow_methods     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    allow_origins     = ["*"]
+    allow_origins     = ["http://localhost:3000", "https://okusuri.vercel.app"]
     expose_headers    = ["*"]
     max_age           = 300
   }
@@ -77,7 +77,7 @@ resource "aws_apigatewayv2_route" "medications" {
 resource "aws_apigatewayv2_route" "medication_logs" {
   api_id    = aws_apigatewayv2_api.main.id
   route_key = "GET /medication-logs"
-  target    = "integrations/${aws_apigatewayv2_api.main.id}"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
   authorization_type = "JWT"
   authorizer_id = aws_apigatewayv2_authorizer.cognito.id
 }
