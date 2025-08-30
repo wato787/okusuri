@@ -74,6 +74,7 @@ module "lambda" {
   environment = var.environment
   project     = var.project
   common_tags = var.common_tags
+  aws_region  = var.aws_region
   
   api_image_uri        = "${module.ecr.repository_url}:latest"
   notification_zip_path = var.notification_zip_path

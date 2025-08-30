@@ -9,10 +9,10 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      ENVIRONMENT        = var.environment
-      DYNAMODB_TABLE    = var.dynamodb_table_name
-      COGNITO_USER_POOL = var.cognito_user_pool_id
-      LOG_LEVEL         = "INFO"
+      PORT               = "8080"
+      AWS_REGION         = var.aws_region
+      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+      LOG_LEVEL          = "INFO"
     }
   }
 
@@ -32,10 +32,10 @@ resource "aws_lambda_function" "notification" {
 
   environment {
     variables = {
-      ENVIRONMENT        = var.environment
-      DYNAMODB_TABLE    = var.dynamodb_table_name
-      COGNITO_USER_POOL = var.cognito_user_pool_id
-      LOG_LEVEL         = "INFO"
+      AWS_REGION         = var.aws_region
+      DYNAMODB_TABLE_NAME = var.dynamodb_table_name
+      COGNITO_USER_POOL_ID = var.cognito_user_pool_id
+      LOG_LEVEL          = "INFO"
     }
   }
 
