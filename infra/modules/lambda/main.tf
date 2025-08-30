@@ -4,8 +4,8 @@ resource "aws_lambda_function" "api" {
   role            = var.iam_role_arn
   package_type    = "Image"
   image_uri       = var.api_image_uri
-  timeout         = var.timeout
-  memory_size     = var.memory_size
+  timeout         = 30
+  memory_size     = 512
 
   environment {
     variables = {
@@ -25,9 +25,10 @@ resource "aws_lambda_function" "notification" {
   function_name    = "${var.project}-${var.environment}-notification"
   role            = var.iam_role_arn
   handler         = "notification"
-  runtime         = var.runtime
-  timeout         = var.timeout
-  memory_size     = var.memory_size
+  runtime         = "provided.al2"
+  timeout         = 30
+  memory_size     = 512
+  source_code_hash = fileexists(var.notification_zip_path) ? filebase64sha256(var.notification_zip_path) : null
 
   environment {
     variables = {

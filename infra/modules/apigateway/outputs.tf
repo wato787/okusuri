@@ -10,7 +10,7 @@ output "api_name" {
 
 output "api_url" {
   description = "API Gateway URL"
-  value       = "${aws_apigatewayv2_stage.main.invoke_url}"
+  value       = aws_apigatewayv2_stage.main.invoke_url
 }
 
 output "stage_name" {

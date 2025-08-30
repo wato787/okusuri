@@ -105,3 +105,16 @@ variable "common_tags" {
     ManagedBy   = "terraform"
   }
 }
+
+# Lambda イメージ・パッケージ設定
+variable "api_image_uri" {
+  description = "ECR image URI for API Lambda"
+  type        = string
+  default     = ""  # デプロイ時に上書きされる
+}
+
+variable "notification_zip_path" {
+  description = "Path to notification Lambda deployment package"
+  type        = string
+  default     = "dist/lambda/notification.zip"
+}

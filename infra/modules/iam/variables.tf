@@ -13,20 +13,4 @@ variable "common_tags" {
   type        = map(string)
 }
 
-variable "dynamodb_table_arn" {
-  description = "DynamoDB table ARN"
-  type        = string
-  default     = ""
-}
-
-variable "cognito_user_pool_arn" {
-  description = "Cognito User Pool ARN"
-  type        = string
-  default     = ""
-}
-
-variable "lambda_function_arn" {
-  description = "Lambda function ARN for EventBridge"
-  type        = string
-  default     = ""
-}
+# これらの変数は削除 - wildcardベースの権限を使用

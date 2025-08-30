@@ -24,6 +24,8 @@ resource "aws_cloudwatch_event_rule" "notification" {
   name                = "${var.project}-${var.environment}-notification-rule"
   description         = "Trigger notification Lambda function"
   schedule_expression = var.schedule_expression
+  
+  tags = var.common_tags
 }
 
 # EventBridge ターゲット

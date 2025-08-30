@@ -28,24 +28,6 @@ variable "dynamodb_table_name" {
   type        = string
 }
 
-variable "runtime" {
-  description = "Lambda runtime for notification function"
-  type        = string
-  default     = "provided.al2"
-}
-
-variable "timeout" {
-  description = "Lambda timeout in seconds"
-  type        = number
-  default     = 30
-}
-
-variable "memory_size" {
-  description = "Lambda memory size in MB"
-  type        = number
-  default     = 512
-}
-
 variable "api_image_uri" {
   description = "ECR image URI for API Lambda function"
   type        = string

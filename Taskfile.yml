@@ -25,7 +25,11 @@ tasks:
     cmds:
       - ./scripts/build-lambda-notification.sh
 
-  # Terraform用
+  build:all:
+    desc: Build all Lambda functions
+    deps: [build:lambda:api, build:lambda:notification]
+
+  # Terraform用（ローカル実行）
   terraform:init:
     desc: Initialize Terraform
     dir: infra
@@ -33,23 +37,16 @@ tasks:
       - terraform init
 
   terraform:plan:
-    desc: Plan Terraform changes
-    dir: infra
+    desc: Plan Terraform changes (local)
     deps: [terraform:init]
+    dir: infra
     cmds:
       - terraform plan
 
-  terraform:apply:
-    desc: Apply Terraform changes
+  # CD環境用
+  deploy:
+    desc: Deploy everything including Lambda functions (CD only)
+    deps: [build:all, terraform:init]
     dir: infra
-    deps: [terraform:init]
     cmds:
       - terraform apply -auto-approve
-
-  # デプロイ用
-  deploy:backend:
-    desc: Deploy backend Lambda function
-    deps: [build:lambda:api]
-    cmds:
-      - ./scripts/deploy-backend.sh
-

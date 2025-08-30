@@ -33,23 +33,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-# モジュール呼び出し
-module "iam" {
-  source = "./modules/iam"
-  
-  environment = var.environment
-  project     = var.project
-  common_tags = var.common_tags
-}
-
-module "dynamodb" {
-  source = "./modules/dynamodb"
-  
-  environment = var.environment
-  project     = var.project
-  common_tags = var.common_tags
-}
-
+# モジュール呼び出し（依存関係順）
 module "cognito" {
   source = "./modules/cognito"
   
@@ -61,12 +45,31 @@ module "cognito" {
   google_client_secret = var.google_client_secret
 }
 
+module "dynamodb" {
+  source = "./modules/dynamodb"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+}
+
+module "iam" {
+  source = "./modules/iam"
+  
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+}
+
 module "lambda" {
   source = "./modules/lambda"
   
   environment = var.environment
   project     = var.project
   common_tags = var.common_tags
+  
+  api_image_uri        = var.api_image_uri
+  notification_zip_path = var.notification_zip_path
   
   cognito_user_pool_id = module.cognito.user_pool_id
   dynamodb_table_name  = module.dynamodb.table_name
@@ -103,6 +106,7 @@ module "cloudwatch" {
   
   environment = var.environment
   project     = var.project
+  common_tags = var.common_tags
   
   lambda_function_names = [
     module.lambda.api_function_name,

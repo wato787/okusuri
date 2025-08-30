@@ -8,6 +8,11 @@ variable "environment" {
   type        = string
 }
 
+variable "common_tags" {
+  description = "Common tags for all resources"
+  type        = map(string)
+}
+
 variable "lambda_function_names" {
   description = "List of Lambda function names for monitoring"
   type        = list(string)

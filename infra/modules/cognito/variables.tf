@@ -28,7 +28,7 @@ variable "client_name" {
 variable "domain_prefix" {
   description = "Cognito domain prefix"
   type        = string
-  default     = "okusuri"
+  default     = null
 }
 
 variable "google_client_id" {

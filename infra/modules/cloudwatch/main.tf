@@ -4,6 +4,8 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
 
   name              = "/aws/lambda/${each.value}"
   retention_in_days = 14
+  
+  tags = var.common_tags
 }
 
 # CloudWatch アラーム（Lambda エラー率）
@@ -24,6 +26,8 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   dimensions = {
     FunctionName = each.value
   }
+  
+  tags = var.common_tags
 }
 
 # CloudWatch アラーム（Lambda 実行時間）
@@ -44,6 +48,8 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
   dimensions = {
     FunctionName = each.value
   }
+  
+  tags = var.common_tags
 }
 
 # CloudWatch ダッシュボード

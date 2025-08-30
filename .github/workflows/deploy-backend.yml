@@ -3,15 +3,15 @@ name: Deploy Backend
 on:
   push:
     branches: [main]
-    paths: 
+    paths:
       - 'backend/**'
-      - 'scripts/deploy-backend.sh'
-      - 'scripts/build-lambda-api.sh'
+      - 'infra/**'
+      - 'scripts/build-lambda-*.sh'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,5 +32,5 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
 
-      - name: Deploy backend
-        run: task deploy:backend
+      - name: Deploy infrastructure and Lambda functions
+        run: task deploy

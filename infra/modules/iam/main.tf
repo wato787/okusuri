@@ -24,7 +24,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# DynamoDB アクセスポリシー
+# DynamoDB アクセスポリシー - wildcardベースの権限
 resource "aws_iam_policy" "dynamodb_access" {
   name = "${var.project}-${var.environment}-dynamodb-access"
 
@@ -42,8 +42,8 @@ resource "aws_iam_policy" "dynamodb_access" {
           "dynamodb:Scan"
         ]
         Resource = [
-          var.dynamodb_table_arn,
-          "${var.dynamodb_table_arn}/index/*"
+          "arn:aws:dynamodb:*:*:table/${var.project}-${var.environment}-*",
+          "arn:aws:dynamodb:*:*:table/${var.project}-${var.environment}-*/index/*"
         ]
       }
     ]
@@ -55,7 +55,7 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb" {
   policy_arn = aws_iam_policy.dynamodb_access.arn
 }
 
-# Cognito アクセスポリシー
+# Cognito アクセスポリシー - wildcardベースの権限
 resource "aws_iam_policy" "cognito_access" {
   name = "${var.project}-${var.environment}-cognito-access"
 
@@ -68,7 +68,7 @@ resource "aws_iam_policy" "cognito_access" {
           "cognito-idp:AdminGetUser",
           "cognito-idp:ListUsers"
         ]
-        Resource = var.cognito_user_pool_arn
+        Resource = "arn:aws:cognito-idp:*:*:userpool/*"
       }
     ]
   })
@@ -99,7 +99,7 @@ resource "aws_iam_role" "eventbridge_role" {
   tags = var.common_tags
 }
 
-# EventBridge Lambda 実行ポリシー
+# EventBridge Lambda 実行ポリシー - wildcardベースの権限
 resource "aws_iam_policy" "eventbridge_lambda" {
   name = "${var.project}-${var.environment}-eventbridge-lambda"
 
@@ -111,7 +111,7 @@ resource "aws_iam_policy" "eventbridge_lambda" {
         Action = [
           "lambda:InvokeFunction"
         ]
-        Resource = var.lambda_function_arn
+        Resource = "arn:aws:lambda:*:*:function:${var.project}-${var.environment}-*"
       }
     ]
   })

@@ -106,7 +106,7 @@ resource "aws_cognito_user_pool_client" "main" {
 
 # Cognito Domain
 resource "aws_cognito_user_pool_domain" "main" {
-  domain       = var.domain_prefix
+  domain       = var.domain_prefix != null ? var.domain_prefix : "${var.project}-${var.environment}"
   user_pool_id = aws_cognito_user_pool.main.id
 }
 
