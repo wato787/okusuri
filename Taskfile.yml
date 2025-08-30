@@ -50,6 +50,19 @@ tasks:
     cmds:
       - terraform apply -auto-approve
 
+  # Lambda関数用タスク
+  deploy:backend:
+    desc: Build and deploy API Lambda (build → ECR push → terraform update)
+    deps: [build:lambda:api]
+    cmds:
+      - ./scripts/deploy-backend.sh
+
+  deploy:notification:
+    desc: Build and deploy notification Lambda (build → terraform update)
+    deps: [build:lambda:notification]
+    cmds:
+      - ./scripts/deploy-notification.sh
+
   # 統合デプロイタスク
   deploy:
     desc: Build and deploy everything (build → ECR push → Lambda deploy → EventBridge setup)
@@ -62,12 +75,6 @@ tasks:
     deps: [build:lambda:api]
     cmds:
       - ./scripts/deploy-api.sh
-
-  deploy:notification:
-    desc: Deploy only notification Lambda (build → update)
-    deps: [build:lambda:notification]
-    cmds:
-      - ./scripts/deploy-notification.sh
 
   # 監視・ログ確認タスク
   logs:api:

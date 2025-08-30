@@ -30,6 +30,17 @@ output "dynamodb_table_arn" {
   value       = module.dynamodb.table_arn
 }
 
+# ECR 出力
+output "ecr_repository_url" {
+  description = "ECR repository URL"
+  value       = module.ecr.repository_url
+}
+
+output "ecr_repository_name" {
+  description = "ECR repository name"
+  value       = module.ecr.repository_name
+}
+
 # Lambda 出力
 output "api_lambda_function_name" {
   description = "API Lambda function name"

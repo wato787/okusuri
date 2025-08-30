@@ -5,7 +5,11 @@ echo "🚀 Deploying notification Lambda..."
 
 cd infra
 
-# Lambda関数更新
-echo "🔄 Updating Lambda functions..."
+# Lambda関数を作成・更新
+echo "🔧 Creating/updating notification Lambda function..."
 terraform apply -auto-approve -target=module.lambda
-echo "✅ Lambda functions updated successfully"
+echo "✅ Notification Lambda function updated successfully"
+
+echo "🎉 Notification Lambda deployment completed!"
+echo "📊 Check logs with: task logs:notification"
+echo "🔔 Lambda will run every night at 22:00 via EventBridge"
