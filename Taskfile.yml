@@ -140,7 +140,7 @@ tasks:
 
   build:lambda:notification:
     desc: Build notification Lambda ZIP package
-    dir: backend
+    dir: notification
     cmds:
       - |
         echo "🔔 通知用Lambdaをビルド中..."
@@ -150,7 +150,7 @@ tasks:
           -a -installsuffix cgo \
           -ldflags="-s -w" \
           -o ../infra/dist/lambda/notification \
-          ./cmd/server
+          .
 
         echo "📦 Lambdaパッケージを作成中..."
         cd ../infra/dist/lambda
@@ -283,3 +283,4 @@ tasks:
       - echo "  task help          - Show this help"
       - echo ""
       - echo "For specific tasks, use: task --list"
+

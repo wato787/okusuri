@@ -1,13 +1,11 @@
-# Go binaries
-main
+# Lambda binaries
 *-lambda
-backend-lambda
+notification-lambda
 
 # Build artifacts
 *.zip
 dist/
 build/
-bin/
 
 # Go specific
 *.exe
@@ -30,6 +28,3 @@ bin/
 # OS
 .DS_Store
 Thumbs.db
-
-# Docker
-.dockerignore

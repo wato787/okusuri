@@ -108,6 +108,12 @@ Thumbs.db
 *.out
 go.work
 
+# Lambda binaries and packages
+*-lambda
+*.zip
+notification-lambda
+backend-lambda
+
 # Database
 *.db
 *.sqlite
