@@ -28,6 +28,7 @@ variable "iam_role_arn" {
 variable "cognito_user_pool_id" {
   description = "Cognito User Pool ID"
   type        = string
+  default     = ""
 }
 
 variable "dynamodb_table_name" {
@@ -38,12 +39,13 @@ variable "dynamodb_table_name" {
 variable "api_image_uri" {
   description = "ECR image URI for API Lambda function"
   type        = string
+  default     = ""
 }
 
 variable "notification_zip_path" {
   description = "Path to notification Lambda deployment package"
   type        = string
-  default     = "../dist/notification.zip"
+  default     = ""
 }
 
 variable "timeout" {
@@ -62,10 +64,12 @@ variable "vapid_public_key" {
   description = "VAPID public key for push notifications"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "vapid_private_key" {
   description = "VAPID private key for push notifications"
   type        = string
   sensitive   = true
+  default     = ""
 }

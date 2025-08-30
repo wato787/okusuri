@@ -42,24 +42,29 @@ output "ecr_repository_name" {
 }
 
 # Lambda 出力
+output "lambda_function_name" {
+  description = "API Lambda function name (for deployment scripts)"
+  value       = module.lambda_api.api_function_name
+}
+
 output "api_lambda_function_name" {
   description = "API Lambda function name"
-  value       = module.lambda.api_function_name
+  value       = module.lambda_api.api_function_name
 }
 
 output "api_lambda_function_arn" {
   description = "API Lambda function ARN"
-  value       = module.lambda.api_function_arn
+  value       = module.lambda_api.api_function_arn
 }
 
 output "notification_lambda_function_name" {
   description = "Notification Lambda function name"
-  value       = module.lambda.notification_function_name
+  value       = module.lambda_notification.notification_function_name
 }
 
 output "notification_lambda_function_arn" {
   description = "Notification Lambda function ARN"
-  value       = module.lambda.notification_function_arn
+  value       = module.lambda_notification.notification_function_arn
 }
 
 # API Gateway 出力

@@ -68,7 +68,8 @@ module "ecr" {
   common_tags = var.common_tags
 }
 
-module "lambda" {
+# Backend Lambda用（Cognito依存なし）
+module "lambda_api" {
   source = "./modules/lambda"
   
   environment = var.environment
@@ -77,8 +78,20 @@ module "lambda" {
   aws_region  = var.aws_region
   
   api_image_uri        = "${module.ecr.repository_url}:latest"
-  notification_zip_path = var.notification_zip_path
+  dynamodb_table_name  = module.dynamodb.table_name
+  iam_role_arn         = module.iam.lambda_role_arn
+}
+
+# Notification Lambda用（Cognito依存あり）
+module "lambda_notification" {
+  source = "./modules/lambda"
   
+  environment = var.environment
+  project     = var.project
+  common_tags = var.common_tags
+  aws_region  = var.aws_region
+  
+  notification_zip_path = var.notification_zip_path
   cognito_user_pool_id = module.cognito.user_pool_id
   dynamodb_table_name  = module.dynamodb.table_name
   iam_role_arn         = module.iam.lambda_role_arn
@@ -96,8 +109,8 @@ module "apigateway" {
   
   cognito_user_pool_id = module.cognito.user_pool_id
   cognito_client_id    = module.cognito.client_id
-  lambda_function_arn  = module.lambda.api_function_arn
-  lambda_function_name = module.lambda.api_function_name
+  lambda_function_arn  = module.lambda_api.api_function_arn
+  lambda_function_name = module.lambda_api.api_function_name
 }
 
 module "eventbridge" {
@@ -107,8 +120,8 @@ module "eventbridge" {
   project     = var.project
   common_tags = var.common_tags
   
-  lambda_function_arn  = module.lambda.notification_function_arn
-  lambda_function_name = module.lambda.notification_function_name
+  lambda_function_arn  = module.lambda_notification.notification_function_arn
+  lambda_function_name = module.lambda_notification.notification_function_name
   iam_role_arn         = module.iam.eventbridge_role_arn
 }
 
@@ -120,7 +133,7 @@ module "cloudwatch" {
   common_tags = var.common_tags
   
   lambda_function_names = [
-    module.lambda.api_function_name,
-    module.lambda.notification_function_name
+    module.lambda_api.api_function_name,
+    module.lambda_notification.notification_function_name
   ]
 }
