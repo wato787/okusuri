@@ -1,0 +1,33 @@
+{
+  "name": "okusuri",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Okusuri - お薬管理アプリケーション",
+  "workspaces": [
+    "okusuri-*"
+  ],
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:backend": "pnpm --filter okusuri-backend dev",
+    "dev:frontend": "pnpm --filter okusuri-frontend dev",
+    "dev:v2": "pnpm --filter okusuri-v2 dev",
+    "build": "pnpm run --recursive build",
+    "build:backend": "pnpm --filter okusuri-backend build",
+    "build:frontend": "pnpm --filter okusuri-frontend build",
+    "build:v2": "pnpm --filter okusuri-v2 build",
+    "lint": "pnpm run --recursive lint",
+    "lint:fix": "pnpm run --recursive lint:fix",
+    "test": "pnpm run --recursive test",
+    "clean": "pnpm run --recursive clean",
+    "install:all": "pnpm install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.1",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
