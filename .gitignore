@@ -111,7 +111,3 @@ go.work
 *.db
 *.sqlite
 *.sqlite3
-
-# IDE
-.cursor/
-.claude/

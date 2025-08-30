@@ -1,0 +1,403 @@
+# Okusuri V2 開発ワークフロー
+
+## 開発環境セットアップ
+
+### 1. 初期セットアップ
+
+```bash
+# 依存関係インストール
+pnpm install
+
+# 環境変数設定
+cp .env.example .env
+
+# VAPIDキー生成
+pnpm run generate-vapid
+
+# 開発サーバー起動
+pnpm dev
+```
+
+### 2. 必須環境変数
+
+```env
+# バックエンドAPI URL
+VITE_API_URL=http://localhost:8080
+
+# Web Push通知用VAPID公開キー
+VITE_VAPID_PUBLIC_KEY=your_vapid_public_key_here
+```
+
+### 3. 開発ツール
+
+- **Vite Dev Server**: `http://localhost:5173`
+- **Hot Module Replacement**: 自動有効
+- **TypeScript**: リアルタイム型チェック
+- **Biome**: リンター・フォーマッター
+
+## 開発フロー
+
+### 1. 機能開発
+
+1. **ブランチ作成**
+
+   ```bash
+   git checkout -b feature/medication-calendar
+   ```
+
+2. **開発・テスト**
+
+   ```bash
+   # 開発サーバー起動
+   pnpm dev
+
+   # 別ターミナルでバックエンド起動
+   cd ../okusuri-backend
+   go run cmd/server/main.go
+   ```
+
+3. **コード品質チェック**
+
+   ```bash
+   # リンター実行
+   pnpm lint
+
+   # 自動修正
+   pnpm lint:fix
+
+   # フォーマット
+   pnpm format
+
+   # 全体チェック
+   pnpm check
+   ```
+
+4. **コミット**
+   ```bash
+   git add .
+   git commit -m "feat: カレンダー機能を追加"
+   ```
+
+### 2. デバッグフロー
+
+#### フロントエンドデバッグ
+
+```typescript
+// 開発時のログ出力
+console.log('Debug:', { data, isLoading, error });
+
+// React DevTools使用
+// - Components タブでコンポーネント状態確認
+// - Profiler タブでパフォーマンス分析
+```
+
+#### API 通信デバッグ
+
+```typescript
+// ネットワークタブでAPI通信確認
+// - Request/Response ヘッダー確認
+// - 認証トークン確認
+// - エラーレスポンス確認
+```
+
+#### Service Worker デバッグ
+
+```javascript
+// Service Worker タブでSW状態確認
+// - 登録状態
+// - キャッシュ内容
+// - プッシュ通知設定
+```
+
+### 3. テストフロー
+
+#### 手動テスト
+
+1. **認証フロー**
+
+   - Google OAuth ログイン
+   - セッション保持
+   - ログアウト
+
+2. **服薬記録**
+
+   - 服薬済み記録
+   - 出血記録
+   - カレンダー表示
+
+3. **通知設定**
+
+   - Web Push 許可
+   - 通知設定保存
+   - 通知受信テスト
+
+4. **PWA 機能**
+   - インストールプロンプト
+   - オフライン動作
+   - アプリ更新
+
+#### 自動テスト（将来実装）
+
+```bash
+# テスト実行
+pnpm test
+
+# テストカバレッジ
+pnpm test:coverage
+
+# E2Eテスト
+pnpm test:e2e
+```
+
+## コードレビュープロセス
+
+### 1. プルリクエスト作成
+
+```bash
+git push origin feature/medication-calendar
+# GitHubでPR作成
+```
+
+### 2. レビューチェックリスト
+
+- [ ] **機能要件**
+
+  - 要件を満たしているか
+  - エッジケースの処理
+  - ユーザビリティ
+
+- [ ] **コード品質**
+
+  - TypeScript 型安全性
+  - TanStack Query 使用
+  - エラーハンドリング
+  - ローディング状態
+
+- [ ] **パフォーマンス**
+
+  - 不要な再レンダリング
+  - バンドルサイズ
+  - メモリリーク
+
+- [ ] **セキュリティ**
+
+  - 認証・認可
+  - 入力値検証
+  - XSS 対策
+
+- [ ] **アクセシビリティ**
+  - キーボード操作
+  - スクリーンリーダー対応
+  - 色のコントラスト
+
+### 3. レビューコメント例
+
+```markdown
+## 良い点
+
+- TanStack Query を適切に使用している
+- エラーハンドリングが実装されている
+- 型安全性が保たれている
+
+## 改善点
+
+- ローディング状態の表示を追加してください
+- エラーメッセージをより具体的にしてください
+- テストケースを追加してください
+```
+
+## デプロイメントフロー
+
+### 1. 本番ビルド
+
+```bash
+# プロダクションビルド
+pnpm build
+
+# ビルド結果確認
+pnpm preview
+```
+
+### 2. 環境別設定
+
+```bash
+# 開発環境
+VITE_API_URL=http://localhost:8080
+VITE_VAPID_PUBLIC_KEY=dev_vapid_key
+
+# ステージング環境
+VITE_API_URL=https://staging-api.okusuri.com
+VITE_VAPID_PUBLIC_KEY=staging_vapid_key
+
+# 本番環境
+VITE_API_URL=https://api.okusuri.com
+VITE_VAPID_PUBLIC_KEY=prod_vapid_key
+```
+
+### 3. デプロイチェックリスト
+
+- [ ] **ビルド成功**
+
+  - TypeScript エラーなし
+  - 依存関係解決
+  - アセット最適化
+
+- [ ] **機能テスト**
+
+  - 認証フロー
+  - 主要機能
+  - 通知設定
+
+- [ ] **パフォーマンス**
+
+  - 初期ロード時間
+  - バンドルサイズ
+  - Lighthouse スコア
+
+- [ ] **PWA 機能**
+  - Service Worker 登録
+  - マニフェスト生成
+  - インストール可能
+
+## トラブルシューティング
+
+### 1. よくある問題
+
+#### Vite Dev Server 起動エラー
+
+```bash
+# ポート競合
+lsof -ti:5173 | xargs kill -9
+
+# 依存関係問題
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+```
+
+#### TypeScript エラー
+
+```bash
+# 型定義更新
+pnpm install @types/react @types/react-dom
+
+# tsconfig.json確認
+# パスエイリアス設定確認
+```
+
+#### Service Worker 問題
+
+```bash
+# SWキャッシュクリア
+# ブラウザの開発者ツール > Application > Storage > Clear storage
+
+# SW再登録
+# ブラウザの開発者ツール > Application > Service Workers > Unregister
+```
+
+#### API 通信エラー
+
+```bash
+# CORS設定確認
+# バックエンドのCORS設定
+
+# 認証トークン確認
+# localStorage の authToken 確認
+```
+
+### 2. デバッグコマンド
+
+```bash
+# 依存関係確認
+pnpm list
+
+# ビルド分析
+pnpm build --analyze
+
+# 型チェック
+pnpm tsc --noEmit
+
+# リンター詳細
+pnpm lint --verbose
+```
+
+### 3. ログ出力
+
+```typescript
+// 開発環境でのみログ出力
+if (import.meta.env.DEV) {
+  console.log('Debug info:', data);
+}
+
+// エラーログ
+console.error('Error occurred:', error);
+
+// パフォーマンス測定
+console.time('operation');
+// ... operation
+console.timeEnd('operation');
+```
+
+## パフォーマンス監視
+
+### 1. 開発時監視
+
+```typescript
+// React DevTools Profiler
+// - コンポーネント再レンダリング
+// - レンダリング時間
+// - メモリ使用量
+
+// Network タブ
+// - API通信時間
+// - バンドルサイズ
+// - キャッシュ効果
+```
+
+### 2. 本番監視
+
+```typescript
+// Web Vitals
+// - LCP (Largest Contentful Paint)
+// - FID (First Input Delay)
+// - CLS (Cumulative Layout Shift)
+
+// エラー監視
+// - JavaScript エラー
+// - API通信エラー
+// - ユーザー操作エラー
+```
+
+### 3. 最適化指標
+
+- **初期ロード時間**: < 3 秒
+- **バンドルサイズ**: < 500KB (gzipped)
+- **Lighthouse スコア**: > 90
+- **Core Web Vitals**: すべて緑
+
+## セキュリティチェック
+
+### 1. 開発時チェック
+
+- [ ] 環境変数の機密情報漏洩
+- [ ] 認証トークンの適切な管理
+- [ ] 入力値の検証
+- [ ] XSS 対策
+
+### 2. 本番デプロイ前チェック
+
+- [ ] HTTPS 設定
+- [ ] CSP (Content Security Policy)
+- [ ] HSTS 設定
+- [ ] セキュリティヘッダー
+
+### 3. 定期的なセキュリティ監査
+
+- [ ] 依存関係の脆弱性チェック
+- [ ] セキュリティアップデート
+- [ ] アクセスログ監視
+- [ ] 異常なアクセス検知
+      description:
+      globs:
+      alwaysApply: false
+
+---

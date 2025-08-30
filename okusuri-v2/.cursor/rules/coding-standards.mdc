@@ -1,0 +1,408 @@
+# Okusuri V2 コーディングスタンダード
+
+## TypeScript ルール
+
+### 1. 型定義
+
+- **厳密な型定義必須**
+
+  ```typescript
+  // ✅ 良い例
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+  }
+
+  // ❌ 悪い例
+  const user: any = { id: 1, name: 'test' };
+  ```
+
+### 2. Zod スキーマ
+
+- **API 型定義は Zod スキーマベース**
+
+  ```typescript
+  // ✅ 良い例
+  export const medicationLogSchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    hasBleeding: z.boolean(),
+    createdAt: z.string(),
+  });
+
+  export type MedicationLog = z.infer<typeof medicationLogSchema>;
+  ```
+
+### 3. 関数型定義
+
+- **明示的な戻り値型指定**
+
+  ```typescript
+  // ✅ 良い例
+  const fetchUser = async (id: string): Promise<User | null> => {
+    // implementation
+  };
+
+  // ❌ 悪い例
+  const fetchUser = async (id) => {
+    // implementation
+  };
+  ```
+
+## React ルール
+
+### 1. コンポーネント定義
+
+- **関数コンポーネント + TypeScript**
+
+  ```typescript
+  // ✅ 良い例
+  interface Props {
+    title: string;
+    onClose?: () => void;
+  }
+
+  export const Modal: React.FC<Props> = ({ title, onClose }) => {
+    return <div>{title}</div>;
+  };
+  ```
+
+### 2. フック使用
+
+- **TanStack Query フック必須**
+
+  ```typescript
+  // ✅ 良い例
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['medication-logs'],
+    queryFn: () => apiClient.get<MedicationLog[]>('/api/medication-log'),
+  });
+
+  // ❌ 悪い例
+  const [data, setData] = useState<MedicationLog[]>([]);
+  useEffect(() => {
+    fetch('/api/medication-log')
+      .then((res) => res.json())
+      .then(setData);
+  }, []);
+  ```
+
+### 3. イベントハンドラー
+
+- **型安全なイベントハンドラー**
+
+  ```typescript
+  // ✅ 良い例
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // implementation
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // implementation
+  };
+  ```
+
+## スタイリングルール
+
+### 1. Tailwind CSS
+
+- **Tailwind CSS クラス使用**
+
+  ```typescript
+  // ✅ 良い例
+  <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
+    <h2 className="text-lg font-semibold text-gray-900">タイトル</h2>
+  </div>
+
+  // ❌ 悪い例
+  <div style={{ display: 'flex', padding: '16px', backgroundColor: 'white' }}>
+    <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>タイトル</h2>
+  </div>
+  ```
+
+### 2. コンポーネントバリアント
+
+- **class-variance-authority 使用**
+  ```typescript
+  // ✅ 良い例
+  const buttonVariants = cva(
+    'inline-flex items-center justify-center rounded-md text-sm font-medium',
+    {
+      variants: {
+        variant: {
+          default: 'bg-blue-600 text-white hover:bg-blue-700',
+          outline: 'border border-gray-300 bg-white hover:bg-gray-50',
+        },
+        size: {
+          default: 'h-10 px-4 py-2',
+          sm: 'h-9 px-3',
+        },
+      },
+      defaultVariants: {
+        variant: 'default',
+        size: 'default',
+      },
+    }
+  );
+  ```
+
+### 3. レスポンシブデザイン
+
+- **モバイルファースト**
+  ```typescript
+  // ✅ 良い例
+  <div className='w-full md:w-1/2 lg:w-1/3 p-4'>
+    <Card className='h-full'>
+      <CardContent className='p-4 md:p-6'>{/* content */}</CardContent>
+    </Card>
+  </div>
+  ```
+
+## API 通信ルール
+
+### 1. エラーハンドリング
+
+- **統一されたエラーハンドリング**
+  ```typescript
+  // ✅ 良い例
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['medication-logs'],
+    queryFn: async () => {
+      try {
+        return await apiClient.get<MedicationLog[]>('/api/medication-log');
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('401')) {
+          // 認証エラーの処理
+          return null;
+        }
+        throw error;
+      }
+    },
+  });
+  ```
+
+### 2. ローディング状態
+
+- **適切なローディング表示**
+
+  ```typescript
+  // ✅ 良い例
+  if (isLoading) {
+    return (
+      <div className='flex justify-center items-center min-h-96'>
+        <LoadingSpinner size='lg' />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className='text-center text-red-600'>エラーが発生しました</div>;
+  }
+  ```
+
+### 3. ミューテーション
+
+- **適切な成功・エラー処理**
+  ```typescript
+  // ✅ 良い例
+  const createMutation = useMutation({
+    mutationFn: (data: CreateData) => apiClient.post('/api/endpoint', data),
+    onSuccess: () => {
+      toast.success('作成しました');
+      queryClient.invalidateQueries({ queryKey: ['data'] });
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error('作成に失敗しました');
+    },
+  });
+  ```
+
+## ファイル・フォルダ命名ルール
+
+### 1. ファイル名
+
+- **PascalCase for components, camelCase for others**
+
+  ```
+  ✅ 良い例
+  - components/MedicationCard.tsx
+  - hooks/useMedicationData.ts
+  - services/notificationApi.ts
+  - types/medication.ts
+
+  ❌ 悪い例
+  - components/medication-card.tsx
+  - hooks/use-medication-data.ts
+  ```
+
+### 2. フォルダ名
+
+- **kebab-case for folders**
+
+  ```
+  ✅ 良い例
+  - src/components/ui/
+  - src/components/navigation/
+  - src/services/
+
+  ❌ 悪い例
+  - src/Components/
+  - src/Services/
+  ```
+
+### 3. インポート順序
+
+- **標準的なインポート順序**
+
+  ```typescript
+  // 1. React関連
+  import React from 'react';
+  import { useState, useEffect } from 'react';
+
+  // 2. 外部ライブラリ
+  import { useQuery, useMutation } from '@tanstack/react-query';
+  import { toast } from 'react-hot-toast';
+
+  // 3. 内部コンポーネント
+  import { Button } from '@/components/ui/button';
+  import { Card } from '@/components/ui/card';
+
+  // 4. 内部フック・サービス
+  import { useMedicationData } from '@/hooks/useMedicationData';
+  import { apiClient } from '@/lib/apiClient';
+
+  // 5. 型定義
+  import type { MedicationLog } from '@/types/medication';
+  ```
+
+## コメント・ドキュメントルール
+
+### 1. 関数コメント
+
+- **JSDoc 形式**
+  ```typescript
+  /**
+   * 服薬ログを作成する
+   * @param data - 服薬ログデータ
+   * @returns 作成された服薬ログ
+   */
+  const createMedicationLog = async (
+    data: MedicationLogRequest
+  ): Promise<MedicationLog> => {
+    // implementation
+  };
+  ```
+
+### 2. 複雑なロジック
+
+- **説明コメント必須**
+  ```typescript
+  // OAuthコールバック時のトークン処理
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  if (token) {
+    setAuthToken(token);
+    // URLからトークンを削除して履歴をクリーンにする
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  ```
+
+### 3. TODO コメント
+
+- **TODO: 説明 + 担当者**
+  ```typescript
+  // TODO: エラーハンドリングを改善する (担当: @username)
+  // TODO: パフォーマンス最適化が必要 (担当: @username)
+  ```
+
+## テストルール
+
+### 1. テストファイル命名
+
+- **テスト対象ファイル名.test.ts**
+  ```
+  ✅ 良い例
+  - MedicationCard.test.tsx
+  - useMedicationData.test.ts
+  - apiClient.test.ts
+  ```
+
+### 2. テスト構造
+
+- **describe + it 形式**
+
+  ```typescript
+  describe('MedicationCard', () => {
+    it('should render medication data correctly', () => {
+      // test implementation
+    });
+
+    it('should handle click events', () => {
+      // test implementation
+    });
+  });
+  ```
+
+## パフォーマンスルール
+
+### 1. メモ化
+
+- **適切なメモ化使用**
+
+  ```typescript
+  // ✅ 良い例
+  const MemoizedComponent = React.memo(({ data }: Props) => {
+    return (
+      <div>
+        {data.map((item) => (
+          <Item key={item.id} {...item} />
+        ))}
+      </div>
+    );
+  });
+
+  const expensiveValue = useMemo(() => {
+    return data.filter((item) => item.active).map((item) => item.value);
+  }, [data]);
+  ```
+
+### 2. 依存配列
+
+- **正確な依存配列**
+
+  ```typescript
+  // ✅ 良い例
+  useEffect(() => {
+    // effect
+  }, [dependency1, dependency2]);
+
+  // ❌ 悪い例
+  useEffect(() => {
+    // effect
+  }, []); // 実際には依存関係がある
+  ```
+
+### 3. 不要な再レンダリング
+
+- **適切なキー設定**
+
+  ```typescript
+  // ✅ 良い例
+  {
+    items.map((item) => <Item key={item.id} {...item} />);
+  }
+
+  // ❌ 悪い例
+  {
+    items.map((item, index) => <Item key={index} {...item} />);
+  }
+  ```
+
+  description:
+  globs:
+  alwaysApply: false
+
+---

@@ -1,0 +1,232 @@
+# Okusuri V2 プロジェクトルール
+
+## プロジェクト概要
+
+- **名前**: Okusuri V2 - 服薬記録と管理アプリケーション
+- **技術スタック**: Vite + React + TypeScript + TanStack Query
+- **目的**: シンプルで軽量な服薬管理アプリ（Home、Calendar、Settings のみ）
+
+## アーキテクチャルルール
+
+### 1. 状態管理
+
+- **TanStack Query (React Query) を必須使用**
+  - すべての API 通信は TanStack Query で統一
+  - `useQuery`、`useMutation`、`useQueryClient`を使用
+  - キャッシュ戦略: `staleTime: 5分`、`gcTime: 10分`
+  - 認証エラー（401）ではリトライしない
+
+### 2. API 通信
+
+- **中央集約された API クライアント**
+  - `src/lib/apiClient.ts`の`ApiClient`クラスを使用
+  - 認証トークンは自動的にヘッダーに追加
+  - エラーハンドリングは統一された形式
+
+### 3. 認証システム
+
+- **Better Auth + Google OAuth**
+  - `AuthContext`でセッション管理
+  - `useQuery`でセッション状態を監視
+  - OAuth コールバック時のトークン自動処理
+  - 保護されたルートは`ProtectedRoute`コンポーネントで制御
+
+### 4. ルーティング
+
+- **React Router DOM v7**
+  - シンプルな 3 ページ構成: Home、Calendar、Settings
+  - 認証ページは`/auth`、メインページは`/`
+  - ボトムナビゲーションでページ間移動
+
+## コンポーネント設計ルール
+
+### 1. UI コンポーネント
+
+- **Radix UI + Tailwind CSS**
+  - `@/components/ui/`配下のコンポーネントを使用
+  - カスタムコンポーネントは`class-variance-authority`でバリアント管理
+  - レスポンシブデザイン必須
+
+### 2. ページ構成
+
+- **Home**: 服薬記録入力、現在の服薬状況表示
+- **Calendar**: 服薬ログのカレンダー表示
+- **Settings**: 通知設定、ログアウト機能
+
+### 3. レイアウト
+
+- **Layout.tsx**: 共通レイアウト（Header + BottomNav）
+- **Header**: シンプルなタイトル表示のみ
+- **BottomNav**: 3 つのページへのナビゲーション
+
+## データ管理ルール
+
+### 1. 型定義
+
+- **Zod スキーマベース**
+  - `src/types/`配下で型定義
+  - API レスポンスは`ApiResponse<T>`型で統一
+  - 服薬ログは`MedicationLog`、`MedicationStatus`型
+
+### 2. フック設計
+
+- **カスタムフックで API 操作を抽象化**
+  - `src/hooks/useMedicationData.ts`で服薬関連操作
+  - 各フックは TanStack Query を使用
+  - エラーハンドリングとローディング状態を管理
+
+### 3. サービス層
+
+- **API 呼び出しをサービス関数で分離**
+  - `src/services/`配下で API 操作を定義
+  - 通知設定は`notificationApi.ts`
+  - 認証は`auth.ts`
+
+## PWA・通知ルール
+
+### 1. Service Worker
+
+- **カスタム Service Worker 使用**
+  - `public/sw.js`で軽量な SW 実装
+  - Workbox は使用しない（サイズ削減のため）
+  - 静的ファイルキャッシュ + API 通信
+
+### 2. Web Push 通知
+
+- **VAPID キー必須**
+  - 環境変数`VITE_VAPID_PUBLIC_KEY`で設定
+  - `src/lib/webpush/`で通知機能実装
+  - 通知設定は Settings ページで管理
+
+### 3. PWA 機能
+
+- **VitePWA プラグイン使用**
+  - `injectManifest`戦略でカスタム SW 使用
+  - インストールプロンプトは`PWAInstallPrompt`コンポーネント
+  - マニフェストは最小限の設定
+
+## 開発ルール
+
+### 1. コード品質
+
+- **Biome 使用**
+  - リンター: `pnpm lint`
+  - フォーマッター: `pnpm format`
+  - 自動修正: `pnpm lint:fix`
+
+### 2. 環境変数
+
+- **必須環境変数**
+  ```
+  VITE_API_URL=http://localhost:8080
+  VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
+  ```
+
+### 3. ファイル構造
+
+```
+src/
+├── components/     # UIコンポーネント
+│   ├── ui/        # Radix UIベースコンポーネント
+│   └── navigation/ # ナビゲーション関連
+├── contexts/      # React Context
+├── hooks/         # カスタムフック
+├── lib/           # ユーティリティライブラリ
+├── pages/         # ページコンポーネント
+├── services/      # APIサービス
+├── types/         # TypeScript型定義
+└── utils/         # ユーティリティ関数
+```
+
+## 禁止事項
+
+### 1. 使用禁止ライブラリ
+
+- **Workbox**: サイズが大きいため使用禁止
+- **重い UI ライブラリ**: Material-UI、Ant Design 等
+- **状態管理ライブラリ**: Redux、Zustand 等（TanStack Query で十分）
+
+### 2. アーキテクチャ禁止事項
+
+- **useEffect での API 呼び出し**: TanStack Query を使用
+- **直接的な fetch 呼び出し**: apiClient 経由で統一
+- **グローバル状態**: Context + TanStack Query で管理
+
+### 3. 機能制限
+
+- **不要な機能**: Stats、Profile 等の重い機能は削除済み
+- **ハンバーガーメニュー**: 削除済み、ボトムナビのみ
+- **複雑なアニメーション**: パフォーマンス重視
+
+## パフォーマンスルール
+
+### 1. バンドルサイズ
+
+- **軽量化優先**
+  - 不要なライブラリは削除
+  - コード分割は Vite の自動分割に依存
+  - Service Worker は最小限
+
+### 2. キャッシュ戦略
+
+- **TanStack Query のキャッシュ活用**
+  - 適切な`staleTime`設定
+  - バックグラウンド更新
+  - オフライン対応
+
+### 3. ローディング状態
+
+- **ユーザー体験重視**
+  - すべての非同期操作でローディング表示
+  - `isPending`状態の適切な管理
+  - スケルトンローディングの使用
+
+## セキュリティルール
+
+### 1. 認証
+
+- **トークンベース認証**
+  - localStorage でトークン管理
+  - 自動的なトークン更新
+  - 401 エラー時の自動ログアウト
+
+### 2. API 通信
+
+- **HTTPS 必須**
+  - 本番環境では HTTPS 必須
+  - 開発環境では localhost 使用
+
+### 3. 環境変数
+
+- **機密情報の管理**
+  - `.env`ファイルは gitignore
+  - VAPID キーは環境変数で管理
+  - フロントエンド公開キーのみ使用
+
+## デプロイメントルール
+
+### 1. ビルド
+
+- **Vite ビルド使用**
+  - `pnpm build`でプロダクションビルド
+  - TypeScript チェック含む
+  - 最適化されたアセット生成
+
+### 2. PWA 設定
+
+- **Service Worker 登録**
+  - ビルド時に SW が自動登録
+  - マニフェストファイル生成
+  - アイコンファイル配置
+
+### 3. 環境別設定
+
+- **環境変数による設定分離**
+  - 開発: localhost:8080
+  - 本番: 適切な API URL
+  - VAPID キーは環境別に設定
+    description:
+    globs:
+    alwaysApply: false
+
+---
