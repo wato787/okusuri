@@ -16,7 +16,7 @@ type NotificationRepository struct {
 
 func NewNotificationRepository() *NotificationRepository {
 	db := config.GetDB()
-	table := db.Table("okusuri-table")
+	table := db.Table(config.GetDynamoDBTableName())
 
 	return &NotificationRepository{
 		table: table,

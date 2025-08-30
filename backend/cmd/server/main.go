@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	routes "okusuri-backend/internal"
 	"okusuri-backend/pkg/config"
 	"okusuri-backend/pkg/logger"
@@ -25,10 +23,7 @@ func main() {
 	log.Info().Msg("ルーター設定が完了しました")
 
 	// ポート設定（Lambda Web Adapter対応）
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := config.GetPort()
 
 	log.Info().Str("port", port).Msg("サーバーを起動します")
 
