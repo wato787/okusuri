@@ -4,41 +4,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-Okusuri (お薬管理アプリケーション) is a monorepo containing a medication tracking application with three main components:
+Okusuri (お薬管理アプリケーション) is a medication tracking application with multiple components:
 
-- **`okusuri-backend`** - Go REST API backend
-- **`okusuri-frontend`** - Next.js 15 frontend 
+- **`backend`** - Go REST API backend
+- **`frontend`** - Next.js 15 frontend 
 - **`okusuri-v2`** - Vite + React frontend (lightweight PWA version)
+- **`docs`** - Design and infrastructure documentation
+- **`notification`** - Notification-related documentation
+- **`infra`** - Infrastructure-related documentation
 
 ## Development Commands
 
-### Root Level (All Projects)
-- **Development**: `pnpm dev` (starts all projects in parallel)
-- **Build**: `pnpm build` (builds all projects)
-- **Lint**: `pnpm lint` (lints all projects)
-- **Lint Fix**: `pnpm lint:fix` (auto-fixes lint issues)
-- **Test**: `pnpm test` (runs tests for all projects)
-- **Clean**: `pnpm clean` (cleans all projects)
+This project uses [Task](https://taskfile.dev/) for project management. Install Task first:
 
-### Individual Projects
-- **Backend only**: `pnpm dev:backend`
-- **Frontend only**: `pnpm dev:frontend` 
-- **V2 only**: `pnpm dev:v2`
-- **Build individual**: `pnpm build:backend`, `pnpm build:frontend`, `pnpm build:v2`
+```bash
+# macOS (Homebrew)
+brew install go-task
+```
 
-### Backend Specific (okusuri-backend/)
-- **Development with hot reload**: `make dev` (uses air)
-- **Build**: `make build` (outputs to ./bin/server)
-- **Test**: `make test`
-- **Clean**: `make clean`
+### Primary Development Commands
+- **Install dependencies**: `task install:all` (installs all project dependencies)
+- **Frontend development**: `task dev:frontend` (Next.js with hot reload)
+- **V2 development**: `task dev:v2` (Vite with hot reload)
+- **Backend development**: `task dev:backend` (Go server)
 
-### Frontend Projects
-- **okusuri-frontend**: Uses Biome for linting (`biome lint ./src`)
-- **okusuri-v2**: Uses Biome for linting (`biome lint ./src`, `biome format ./src --write`)
+### Build Commands
+- **Build frontend**: `task build:frontend`
+- **Build V2**: `task build:v2`
+- **Build backend**: `task build:backend`
+
+### Linting & Formatting
+- **Lint frontend**: `task lint:frontend`, `task lint:fix:frontend`
+- **Lint V2**: `task lint:v2`, `task lint:fix:v2`
+
+### Testing & Utilities
+- **Test backend**: `task test:backend`
+- **Clean builds**: `task clean`
+- **Project status**: `task status`
+- **List all tasks**: `task --list`
+
+### Backend Specific (backend/ directory)
+- **Development with Makefile**: `make dev` (uses air for hot reload)
+- **Direct Go run**: `go run cmd/server/main.go`
+- **Tests**: `go test ./...`
 
 ## Technology Stack & Architecture
 
-### Backend (okusuri-backend)
+### Backend (backend/)
 - **Language**: Go 1.24
 - **Framework**: Gin (HTTP router)
 - **Database**: PostgreSQL with GORM ORM
@@ -46,14 +58,16 @@ Okusuri (お薬管理アプリケーション) is a monorepo containing a medica
 - **Authentication**: JWT-based with Better Auth integration
 - **Key Models**: MedicationLog (tracks intake + bleeding), NotificationSetting, User
 - **API Prefix**: All endpoints under `/api`
+- **Entry Point**: `cmd/server/main.go`
+- **Lambda Support**: `cmd/lambda/` for AWS Lambda deployment
 
-### Frontend (okusuri-frontend) - Next.js
+### Frontend (frontend/) - Next.js
 - **Framework**: Next.js 15 with App Router
 - **Authentication**: Better Auth + Google OAuth
 - **Database**: Direct PostgreSQL connection
 - **Styling**: Tailwind CSS + Radix UI
 - **Features**: PWA capabilities, push notifications
-- **Dev Server**: `next dev --turbopack --experimental-https`
+- **Dev Server**: Uses Turbopack with experimental HTTPS
 
 ### V2 Frontend (okusuri-v2) - Vite + React
 - **Framework**: Vite + React 19 + TypeScript
@@ -85,8 +99,9 @@ Okusuri (お薬管理アプリケーション) is a monorepo containing a medica
 
 ### Environment Setup
 - **Node.js**: ≥18.0.0
-- **pnpm**: ≥8.0.0 (required package manager)
+- **pnpm**: ≥8.0.0 (package manager for frontend projects)
 - **Go**: 1.24+
+- **Task**: Task runner for project management (`brew install go-task`)
 - **Database**: PostgreSQL (requires DATABASE_URL env var for backend)
 
 ### V2 Environment Variables (Required)
@@ -114,6 +129,19 @@ VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 
 ## Development Workflow Best Practices
 - Create feature branches from main
-- Run linting and tests before commits
-- Use monorepo workspace commands for cross-project operations
+- Run linting and tests before commits: `task lint:frontend lint:v2 test:backend`
+- Use Task commands for consistent development workflow
 - Backend hot reload with air, frontend with Vite/Next.js HMR
+- Use `task status` to check overall project health
+
+## Project Structure Overview
+```
+okusuri/
+├── backend/           # Go REST API with clean architecture
+├── frontend/          # Next.js 15 app with App Router
+├── okusuri-v2/        # Lightweight React PWA
+├── docs/              # Design and infrastructure docs
+├── notification/      # Notification documentation
+├── infra/             # Infrastructure documentation
+└── Taskfile.yml       # Task automation configuration
+```
