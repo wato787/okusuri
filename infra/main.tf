@@ -8,14 +8,12 @@ terraform {
     }
   }
 
-  # S3 + DynamoDB で remote state 管理（一時的にコメントアウト）
-  # backend "s3" {
-  #   bucket         = "okusuri-terraform-state"
-  #   key            = "infra/terraform.tfstate"
-  #   region         = "ap-northeast-1"
-  #   dynamodb_table = "okusuri-terraform-locks"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "okusuri-terraform-state"
+    key            = "infra/terraform.tfstate"
+    region         = "ap-northeast-1"
+    encrypt        = true
+  }
 }
 
 # AWS プロバイダー設定
