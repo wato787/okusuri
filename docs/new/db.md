@@ -4,17 +4,21 @@
 
 このドキュメントは、Okusuri アプリケーションのデータベースを PostgreSQL から DynamoDB に移行する際の詳細設計書です。
 
+**重要**: 認証システムとユーザー基本情報は AWS Cognito に移行するため、認証関連のテーブル（session, account, verification, user）は DynamoDB には含まれません。DynamoDB では**単一テーブル**内でアプリケーション固有データ（服用履歴、通知設定）のみを管理します。
+
 ## 🎯 設計方針
 
 ### **基本方針**
 
-- **単一テーブル設計**: パフォーマンスとスケーラビリティの最適化
+- **単一テーブル設計**: 1 つのテーブル内で複数エンティティを管理し、パフォーマンスとスケーラビリティを最適化
 - **guregu/dynamo 使用**: Go 言語での使いやすさとパフォーマンスの両立
 - **アクセスパターン最適化**: 現在のクエリパターンに基づいたキー設計
+- **Cognito 連携**: ユーザー認証・基本情報は Cognito に委譲、アプリケーションデータのみ管理
 
 ### **技術スタック**
 
 - **データベース**: Amazon DynamoDB
+- **認証・ユーザー管理**: AWS Cognito User Pool
 - **Go ライブラリ**: `github.com/guregu/dynamo/v2`
 - **インフラ**: Terraform 管理
 
@@ -30,12 +34,8 @@ type OkusuriTable struct {
     PK        string    `dynamo:"PK,hash"`                    // Partition Key
     SK        string    `dynamo:"SK,range"`                   // Sort Key
 
-    // インデックス用フィールド
-    Type      string    `dynamo:"Type,index:TypeIndex,hash"`  // GSI1: タイプ別検索
-    UserID    string    `dynamo:"UserID,index:UserIndex,hash"` // GSI2: ユーザー別検索
-    Email     string    `dynamo:"Email,index:EmailIndex,hash"` // GSI3: メール検索
-    Token     string    `dynamo:"Token,index:TokenIndex,hash"` // GSI4: トークン検索
-    Date      string    `dynamo:"Date,index:DateIndex,hash"`   // GSI5: 日付検索
+    // インデックス用フィールド（DateIndexのみ）
+    Date      string    `dynamo:"Date,index:DateIndex,hash"`   // GSI1: 日付検索
 
     // データフィールド
     Data      map[string]interface{} `dynamo:"Data"`           // エンティティ固有のデータ
@@ -47,63 +47,12 @@ type OkusuriTable struct {
 }
 ```
 
-#### **キー設計**
+#### **キー設計（単一テーブル内の異なるエンティティ）**
 
-##### **1. ユーザー情報**
-
-```
-PK: "USER#{userId}"
-SK: "PROFILE"
-Type: "user"
-Data: {
-    "name": "ユーザー名",
-    "email": "user@example.com",
-    "emailVerified": true,
-    "image": "https://...",
-    "createdAt": "2025-08-30T10:00:00Z",
-    "updatedAt": "2025-08-30T10:00:00Z"
-}
-```
-
-##### **2. セッション情報**
+##### **1. 服用履歴**
 
 ```
-PK: "USER#{userId}"
-SK: "SESSION#{sessionId}"
-Type: "session"
-Data: {
-    "expiresAt": "2025-09-06T10:00:00Z",
-    "token": "jwt_token_here",
-    "ipAddress": "192.168.1.1",
-    "userAgent": "Mozilla/5.0...",
-    "createdAt": "2025-08-30T10:00:00Z",
-    "updatedAt": "2025-08-30T10:00:00Z"
-}
-```
-
-##### **3. OAuth 認証情報**
-
-```
-PK: "USER#{userId}"
-SK: "ACCOUNT#{providerId}"
-Type: "account"
-Data: {
-    "accountId": "google_account_id",
-    "providerId": "google",
-    "accessToken": "access_token_here",
-    "refreshToken": "refresh_token_here",
-    "idToken": "id_token_here",
-    "accessTokenExpiresAt": "2025-08-30T11:00:00Z",
-    "scope": "openid profile email",
-    "createdAt": "2025-08-30T10:00:00Z",
-    "updatedAt": "2025-08-30T10:00:00Z"
-}
-```
-
-##### **4. 服用履歴**
-
-```
-PK: "USER#{userId}"
+PK: "USER#{cognitoUserId}"
 SK: "MEDICATION#{date}#{id}"
 Type: "medication_log"
 Data: {
@@ -113,10 +62,10 @@ Data: {
 }
 ```
 
-##### **5. 通知設定**
+##### **2. 通知設定**
 
 ```
-PK: "USER#{userId}"
+PK: "USER#{cognitoUserId}"
 SK: "NOTIFICATION#{platform}"
 Type: "notification_setting"
 Data: {
@@ -128,58 +77,9 @@ Data: {
 }
 ```
 
-##### **6. メール認証**
-
-```
-PK: "VERIFICATION#{identifier}"
-SK: "VERIFICATION#{value}"
-Type: "verification"
-Data: {
-    "expiresAt": "2025-08-30T11:00:00Z",
-    "createdAt": "2025-08-30T10:00:00Z",
-    "updatedAt": "2025-08-30T10:00:00Z"
-}
-```
-
 ## 🔍 GSI（Global Secondary Index）設計
 
-### **GSI1: TypeIndex**
-
-```
-PK: Type
-SK: PK
-用途: タイプ別の一覧取得
-例: 全ユーザー取得、全セッション取得
-```
-
-### **GSI2: UserIndex**
-
-```
-PK: UserID
-SK: SK
-用途: 特定ユーザーの全データ取得
-例: ユーザーの服用履歴一覧、通知設定一覧
-```
-
-### **GSI3: EmailIndex**
-
-```
-PK: Email
-SK: UserID
-用途: メールアドレスでのユーザー検索
-例: ログイン時のユーザー特定
-```
-
-### **GSI4: TokenIndex**
-
-```
-PK: Token
-SK: UserID
-用途: セッショントークンでのユーザー検索
-例: 認証ミドルウェアでのユーザー特定
-```
-
-### **GSI5: DateIndex**
+### **GSI1: DateIndex（唯一必要な GSI）**
 
 ```
 PK: Date
@@ -188,52 +88,43 @@ SK: UserID#MEDICATION#{id}
 例: 連続服用日数の計算、特定日付の履歴取得
 ```
 
+**注意**: 他の GSI は不要です。理由は以下の通り：
+
+- **TypeIndex**: 全服用履歴・全通知設定の取得は実用的でない
+- **UserIndex**: ユーザー別データは PK（USER#{cognitoUserId}）で十分取得可能
+- **DateIndex**: 連続服用日数計算で必要（日付順ソート）
+
 ## 📊 アクセスパターンとクエリ例
 
-### **1. ユーザー認証フロー**
+### **1. ユーザー情報取得（Cognito から取得）**
 
-#### **トークンからユーザー情報取得**
+#### **Cognito User ID からユーザー情報取得**
 
 ```go
-func (r *UserRepository) GetUserByToken(token string) (*model.User, error) {
-    var result OkusuriTable
-    err := r.table.Get("Token", token).Index("TokenIndex").One(&result)
+// ユーザー基本情報は Cognito から取得
+func (r *UserRepository) GetUserByCognitoID(cognitoUserID string) (*model.User, error) {
+    // Cognito の AdminGetUser API を呼び出し
+    cognitoUser, err := r.cognitoClient.AdminGetUser(cognitoUserID)
     if err != nil {
         return nil, err
     }
 
-    // PKからuserIdを抽出: "USER#{userId}" → userId
-    userID := strings.TrimPrefix(result.PK, "USER#")
-
-    // ユーザー情報を取得
-    var userData OkusuriTable
-    err = r.table.Get("PK", "USER#"+userID).Range("SK", "PROFILE").One(&userData)
-    if err != nil {
-        return nil, err
-    }
-
-    return unmarshalUser(userData), nil
+    return unmarshalCognitoUser(cognitoUser), nil
 }
 ```
 
-#### **メールアドレスでユーザー検索**
+#### **メールアドレスでユーザー検索（Cognito から取得）**
 
 ```go
+// メールアドレスでの検索は Cognito の ListUsers API を使用
 func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
-    var result OkusuriTable
-    err := r.table.Get("Email", email).Index("EmailIndex").One(&result)
+    // Cognito の ListUsers API を呼び出し
+    cognitoUser, err := r.cognitoClient.ListUsers(email)
     if err != nil {
         return nil, err
     }
 
-    // UserIDからユーザー情報を取得
-    var userData OkusuriTable
-    err = r.table.Get("PK", "USER#"+result.UserID).Range("SK", "PROFILE").One(&userData)
-    if err != nil {
-        return nil, err
-    }
-
-    return unmarshalUser(userData), nil
+    return unmarshalCognitoUser(cognitoUser), nil
 }
 ```
 
@@ -242,9 +133,9 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 #### **ユーザーの服用履歴一覧取得**
 
 ```go
-func (r *MedicationRepository) GetLogsByUserID(userID string) ([]model.MedicationLog, error) {
+func (r *MedicationRepository) GetLogsByUserID(cognitoUserID string) ([]model.MedicationLog, error) {
     var results []OkusuriTable
-    err := r.table.Get("UserID", userID).Index("UserIndex").
+    err := r.table.Get("PK", "USER#"+cognitoUserID).
         Filter("begins_with(SK, 'MEDICATION#')").
         All(&results)
     if err != nil {
@@ -258,11 +149,10 @@ func (r *MedicationRepository) GetLogsByUserID(userID string) ([]model.Medicatio
 #### **連続服用日数の計算**
 
 ```go
-func (r *MedicationRepository) GetConsecutiveDays(userID string) (int, error) {
+func (r *MedicationRepository) GetConsecutiveDays(cognitoUserID string) (int, error) {
     var results []OkusuriTable
-    err := r.table.Get("UserID", userID).Index("UserIndex").
+    err := r.table.Get("PK", "USER#"+cognitoUserID).
         Filter("begins_with(SK, 'MEDICATION#')").
-        Order(true). // 降順
         All(&results)
     if err != nil {
         return 0, err
@@ -278,9 +168,9 @@ func (r *MedicationRepository) GetConsecutiveDays(userID string) (int, error) {
 #### **ユーザーの通知設定取得**
 
 ```go
-func (r *NotificationRepository) GetSetting(userID string, platform string) (*model.NotificationSetting, error) {
+func (r *NotificationRepository) GetSetting(cognitoUserID string, platform string) (*model.NotificationSetting, error) {
     var result OkusuriTable
-    err := r.table.Get("PK", "USER#"+userID).Range("SK", "NOTIFICATION#"+platform).One(&result)
+    err := r.table.Get("PK", "USER#"+cognitoUserID).Range("SK", "NOTIFICATION#"+platform).One(&result)
     if err != nil {
         return nil, err
     }
@@ -289,6 +179,39 @@ func (r *NotificationRepository) GetSetting(userID string, platform string) (*mo
 }
 ```
 
+## 🔐 Cognito 連携の詳細
+
+### **認証フローの変更**
+
+#### **現在のフロー（PostgreSQL + カスタム認証）**
+
+```
+1. Google OAuth → カスタムJWT生成 → セッションテーブル保存
+2. リクエスト時: JWT検証 → セッションテーブル参照 → ユーザー情報取得
+```
+
+#### **新しいフロー（Cognito + DynamoDB）**
+
+```
+1. Google OAuth → Cognito Identity Provider → Cognito User Pool
+2. リクエスト時: Cognito JWT検証 → Cognitoからユーザー基本情報取得 → DynamoDBからアプリケーションデータ取得
+```
+
+### **Cognito 設定項目**
+
+#### **User Pool 設定**
+
+- **認証プロバイダー**: Google OAuth
+- **ユーザー属性**: email, name, picture, email_verified
+- **アプリクライアント**: フロントエンド用
+- **トークン有効期限**: アクセストークン（1 時間）、リフレッシュトークン（30 日）
+
+#### **Identity Pool 設定**
+
+- **認証プロバイダー**: Cognito User Pool
+- **IAM ロール**: 認証済み・未認証ユーザー用
+- **DynamoDB アクセス権限**: 認証済みユーザーのみ
+
 ## 🔧 実装詳細
 
 ### **依存関係**
@@ -296,7 +219,7 @@ func (r *NotificationRepository) GetSetting(userID string, platform string) (*mo
 ```go
 import (
     "github.com/guregu/dynamo/v2"
-    "github.com/guregu/dynamo/v2/dynamoattribute"
+    "github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 )
 ```
 
@@ -304,12 +227,14 @@ import (
 
 ```go
 type Repository struct {
-    table dynamo.Table
+    table         dynamo.Table
+    cognitoClient *cognitoidentityprovider.Client
 }
 
-func NewRepository(db *dynamo.DB) *Repository {
+func NewRepository(db *dynamo.DB, cognitoClient *cognitoidentityprovider.Client) *Repository {
     return &Repository{
-        table: db.Table("okusuri-table"),
+        table:         db.Table("okusuri-table"),
+        cognitoClient: cognitoClient,
     }
 }
 ```
@@ -317,17 +242,25 @@ func NewRepository(db *dynamo.DB) *Repository {
 ### **データマーシャリング**
 
 ```go
-func unmarshalUser(data OkusuriTable) *model.User {
-    userData := data.Data
+func unmarshalCognitoUser(cognitoUser *cognitoidentityprovider.AdminGetUserOutput) *model.User {
     return &model.User{
-        ID:            strings.TrimPrefix(data.PK, "USER#"),
-        Name:          userData["name"].(string),
-        Email:         userData["email"].(string),
-        EmailVerified: userData["emailVerified"].(bool),
-        Image:         userData["image"].(*string),
-        CreatedAt:     parseTime(userData["createdAt"].(string)),
-        UpdatedAt:     parseTime(userData["updatedAt"].(string)),
+        ID:            *cognitoUser.Username,
+        Name:          getAttributeValue(cognitoUser.UserAttributes, "name"),
+        Email:         getAttributeValue(cognitoUser.UserAttributes, "email"),
+        EmailVerified: getAttributeValue(cognitoUser.UserAttributes, "email_verified") == "true",
+        Image:         getAttributeValue(cognitoUser.UserAttributes, "picture"),
+        CreatedAt:     cognitoUser.UserCreateDate,
+        UpdatedAt:     cognitoUser.UserLastModifiedDate,
     }
+}
+
+func getAttributeValue(attributes []cognitoidentityprovider.AttributeType, name string) string {
+    for _, attr := range attributes {
+        if *attr.Name == name {
+            return *attr.Value
+        }
+    }
+    return ""
 }
 ```
 
@@ -335,13 +268,14 @@ func unmarshalUser(data OkusuriTable) *model.User {
 
 ### **1. ホットパーティション対策**
 
-- ユーザー ID をパーティションキーとして使用
+- Cognito User ID をパーティションキーとして使用
 - 各ユーザーのデータが分散配置される
 
 ### **2. クエリ最適化**
 
-- 必要な GSI のみを作成
+- 必要最小限の GSI（DateIndex のみ）でコスト削減
 - 複雑なクエリは複数のシンプルなクエリに分割
+- ユーザー別データは PK で直接取得（GSI 不要）
 
 ### **3. データサイズ管理**
 
@@ -352,21 +286,23 @@ func unmarshalUser(data OkusuriTable) *model.User {
 
 ### **フェーズ 1: インフラ準備**
 
-1. DynamoDB テーブル作成
-2. GSI 設定
-3. IAM 権限設定
+1. Cognito User Pool 作成
+2. DynamoDB テーブル作成
+3. GSI 設定
+4. IAM 権限設定
 
 ### **フェーズ 2: コード移行**
 
-1. リポジトリ層の書き換え
-2. データマーシャリング関数の実装
-3. エラーハンドリングの調整
+1. Cognito クライアント統合
+2. リポジトリ層の書き換え
+3. データマーシャリング関数の実装
+4. エラーハンドリングの調整
 
 ### **フェーズ 3: データ移行**
 
-1. 既存データのエクスポート
-2. DynamoDB 形式への変換
-3. データ投入と整合性チェック
+1. 既存ユーザーデータを Cognito に移行
+2. アプリケーションデータを DynamoDB に移行
+3. データ整合性チェック
 
 ### **フェーズ 4: 切り替え**
 
@@ -382,24 +318,30 @@ func unmarshalUser(data OkusuriTable) *model.User {
 - パーティションあたりのスループット制限
 - GSI の更新遅延
 
-### **2. 移行時のリスク**
+### **2. Cognito の制限**
+
+- ユーザープールあたりの最大ユーザー数
+- カスタム属性の制限
+- トークンサイズの制限
+
+### **3. 移行時のリスク**
 
 - データ整合性の確保
 - ダウンタイムの最小化
 - ロールバック手順の準備
 
-### **3. コスト管理**
+### **4. コスト管理**
 
 - 読み書きユニットの適切な設定
 - GSI のコスト影響
-- データ転送料金
+- Cognito の料金体系
 
 ## 📝 次のステップ
 
-1. **Terraform でのテーブル定義作成**
-2. **リポジトリ層の実装**
-3. **データ移行スクリプトの作成**
-4. **テスト環境での動作確認**
+1. **Cognito 設定の詳細設計**
+2. **Terraform でのテーブル定義作成**
+3. **リポジトリ層の実装**
+4. **データ移行スクリプトの作成**
 
 ---
 
