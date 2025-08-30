@@ -3,23 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "description": "Okusuri - お薬管理アプリケーション",
-  "workspaces": [
-    "okusuri-*"
-  ],
   "scripts": {
-    "dev": "pnpm run --parallel dev",
-    "dev:backend": "pnpm --filter okusuri-backend dev",
-    "dev:frontend": "pnpm --filter okusuri-frontend dev",
-    "dev:v2": "pnpm --filter okusuri-v2 dev",
-    "build": "pnpm run --recursive build",
-    "build:backend": "pnpm --filter okusuri-backend build",
-    "build:frontend": "pnpm --filter okusuri-frontend build",
-    "build:v2": "pnpm --filter okusuri-v2 build",
-    "lint": "pnpm run --recursive lint",
-    "lint:fix": "pnpm run --recursive lint:fix",
-    "test": "pnpm run --recursive test",
-    "clean": "pnpm run --recursive clean",
-    "install:all": "pnpm install"
+    "dev:frontend": "cd frontend && pnpm dev",
+    "dev:v2": "cd okusuri-v2 && pnpm dev",
+    "build:frontend": "cd frontend && pnpm build",
+    "build:v2": "cd okusuri-v2 && pnpm build",
+    "lint:frontend": "cd frontend && pnpm lint",
+    "lint:v2": "cd okusuri-v2 && pnpm lint",
+    "lint:fix:frontend": "cd frontend && pnpm lint:fix",
+    "lint:fix:v2": "cd okusuri-v2 && pnpm lint:fix",
+    "start:frontend": "cd frontend && pnpm start",
+    "preview:v2": "cd okusuri-v2 && pnpm preview"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.1",

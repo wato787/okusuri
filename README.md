@@ -1,12 +1,15 @@
 # Okusuri - お薬管理アプリケーション
 
-このリポジトリは、お薬管理アプリケーション「Okusuri」のモノレポです。
+このリポジトリは、お薬管理アプリケーション「Okusuri」のプロジェクトです。
 
 ## プロジェクト構成
 
-- **`okusuri-backend`** - Go 製のバックエンド API
-- **`okusuri-frontend`** - Next.js 製のフロントエンド（Next.js 15）
+- **`backend`** - Go 製のバックエンド API
+- **`frontend`** - Next.js 製のフロントエンド（Next.js 15）
 - **`okusuri-v2`** - Vite + React 製のフロントエンド（V2）
+- **`notification`** - 通知関連のドキュメント
+- **`infra`** - インフラ関連のドキュメント
+- **`docs`** - 設計・Terraformドキュメント
 
 ## 開発環境のセットアップ
 
@@ -20,45 +23,62 @@
 ### インストール
 
 ```bash
-# 依存関係のインストール
-pnpm install
+# フロントエンドの依存関係をインストール
+cd frontend && pnpm install
+cd ../okusuri-v2 && pnpm install
 
-# 全プロジェクトの開発サーバーを起動
-pnpm dev
+# バックエンドの依存関係をインストール
+cd ../backend && go mod download
+```
 
-# 個別のプロジェクトを起動
-pnpm dev:backend    # バックエンドのみ
-pnpm dev:frontend   # フロントエンドのみ
-pnpm dev:v2         # V2のみ
+### 開発サーバーの起動
+
+```bash
+# フロントエンド（Next.js）
+pnpm dev:frontend
+
+# V2（Vite + React）
+pnpm dev:v2
+
+# バックエンド（Go）
+cd backend && go run cmd/server/main.go
+# または
+cd backend && make dev
 ```
 
 ### ビルド
 
 ```bash
-# 全プロジェクトをビルド
-pnpm build
-
-# 個別のプロジェクトをビルド
-pnpm build:backend
+# フロントエンド
 pnpm build:frontend
+
+# V2
 pnpm build:v2
+
+# バックエンド
+cd backend && go build cmd/server/main.go
 ```
 
 ### リント・フォーマット
 
 ```bash
-# 全プロジェクトのリント
-pnpm lint
+# フロントエンド
+pnpm lint:frontend
+pnpm lint:fix:frontend
 
-# 全プロジェクトのリント修正
-pnpm lint:fix
+# V2
+pnpm lint:v2
+pnpm lint:fix:v2
+
+# バックエンド
+cd backend && golangci-lint run
 ```
 
 ## 開発ワークフロー
 
-1. 各アプリケーションは独立したディレクトリで開発
-2. ルートの `package.json` でワークスペース全体の管理
-3. `pnpm --filter` コマンドで個別プロジェクトの操作
+1. 各プロジェクトは独立したディレクトリで開発
+2. ルートの `package.json` でフロントエンドプロジェクトの操作を簡素化
+3. バックエンドはGoの標準的な開発フローを使用
 
 ## 技術スタック
 
@@ -71,7 +91,7 @@ pnpm lint:fix
 
 ### フロントエンド
 
-- Next.js 15 (okusuri-frontend)
+- Next.js 15 (frontend)
 - Vite + React (okusuri-v2)
 - TypeScript
 - Tailwind CSS
