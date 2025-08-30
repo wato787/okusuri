@@ -25,21 +25,37 @@ brew install go-task
 ### Primary Development Commands
 - **Install dependencies**: `task install:all` (installs all project dependencies)
 - **Frontend development**: `task dev:frontend` (Next.js with hot reload)
-- **V2 development**: `task dev:v2` (Vite with hot reload)
-- **Backend development**: `task dev:backend` (Go server)
+- **V2 development**: `task dev:v2` (Vite with hot reload) 
+- **Backend development**: `task dev:backend` (Go server with hot reload)
+
+### Individual Install Commands
+- **Frontend dependencies**: `task install:frontend`
+- **V2 dependencies**: `task install:v2` (corrected from original docs)
+- **Backend dependencies**: `task install:backend`
 
 ### Build Commands
 - **Build frontend**: `task build:frontend`
 - **Build V2**: `task build:v2`
 - **Build backend**: `task build:backend`
+- **Build Lambda API**: `task build:lambda:api` (Docker container)
+- **Build Lambda notification**: `task build:lambda:notification` (ZIP package)
+- **Build all Lambda**: `task build:lambda`
+
+### Production Commands
+- **Start production frontend**: `task start:frontend`
+- **Preview V2 build**: `task preview:v2`
+- **Docker build backend**: `task docker:build:backend`
+- **Docker run backend**: `task docker:run:backend`
 
 ### Linting & Formatting
 - **Lint frontend**: `task lint:frontend`, `task lint:fix:frontend`
 - **Lint V2**: `task lint:v2`, `task lint:fix:v2`
 
-### Testing & Utilities
+### Testing & Utilities  
 - **Test backend**: `task test:backend`
+- **Test with coverage**: `task test:coverage:backend`
 - **Clean builds**: `task clean`
+- **Clean backend only**: `task clean:backend`
 - **Project status**: `task status`
 - **List all tasks**: `task --list`
 
@@ -96,6 +112,7 @@ brew install go-task
 - **Backend**: Run `gofmt -l .` before commits, use `go mod tidy` after dependency changes
 - **Frontend**: Use Biome for linting and formatting
 - **Testing**: Use testify framework for Go backend tests
+- **Coverage**: Use `task test:coverage:backend` to generate coverage reports
 
 ### Environment Setup
 - **Node.js**: ≥18.0.0
@@ -131,8 +148,10 @@ VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 - Create feature branches from main
 - Run linting and tests before commits: `task lint:frontend lint:v2 test:backend`
 - Use Task commands for consistent development workflow
-- Backend hot reload with air, frontend with Vite/Next.js HMR
+- Backend hot reload with air (via `task dev:backend` or `make dev`), frontend with Vite/Next.js HMR
 - Use `task status` to check overall project health
+- For backend: Use `make dev` in backend/ directory for air hot reloading
+- For Lambda deployment: Use `task build:lambda` to build both API container and notification ZIP
 
 ## Project Structure Overview
 ```
