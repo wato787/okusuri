@@ -1,115 +1,12 @@
 version: '3'
 
 tasks:
-  # フロントエンド（Next.js）
-  frontend:
-    desc: Frontend development and build tasks
-    cmds:
-      - echo "Frontend tasks:"
-      - echo "  dev:frontend     - Start Next.js development server"
-      - echo "  build:frontend   - Build Next.js project"
-      - echo "  start:frontend   - Start Next.js production server"
-      - echo "  lint:frontend    - Lint Next.js project"
-      - echo "  install:frontend - Install frontend dependencies"
-
+  # 開発用
   dev:frontend:
     desc: Start Next.js development server
     dir: frontend
     cmds:
       - pnpm dev
-
-  build:frontend:
-    desc: Build Next.js project
-    dir: frontend
-    cmds:
-      - pnpm build
-
-  start:frontend:
-    desc: Start Next.js production server
-    dir: frontend
-    cmds:
-      - pnpm start
-
-  lint:frontend:
-    desc: Lint Next.js project
-    dir: frontend
-    cmds:
-      - pnpm lint
-
-  lint:fix:frontend:
-    desc: Fix linting issues in Next.js project
-    dir: frontend
-    cmds:
-      - pnpm lint:fix
-
-  install:frontend:
-    desc: Install frontend dependencies
-    dir: frontend
-    cmds:
-      - pnpm install
-
-  # フロントエンドV2（Vite）
-  frontend-v2:
-    desc: Frontend V2 development and build tasks
-    cmds:
-      - echo "Frontend V2 tasks:"
-      - echo "  dev:frontend-v2   - Start Vite development server"
-      - echo "  build:frontend-v2 - Build Vite project"
-      - echo "  preview:frontend-v2 - Preview Vite build"
-      - echo "  lint:frontend-v2  - Lint Vite project"
-      - echo "  install:frontend-v2 - Install V2 dependencies"
-
-  dev:frontend-v2:
-    desc: Start Vite development server
-    dir: okusuri-v2
-    cmds:
-      - pnpm dev
-
-  build:frontend-v2:
-    desc: Build Vite project
-    dir: okusuri-v2
-    cmds:
-      - pnpm build
-
-  preview:frontend-v2:
-    desc: Preview Vite build
-    dir: okusuri-v2
-    cmds:
-      - pnpm preview
-
-  lint:frontend-v2:
-    desc: Lint Vite project
-    dir: okusuri-v2
-    cmds:
-      - pnpm lint
-
-  lint:fix:frontend-v2:
-    desc: Fix linting issues in Vite project
-    dir: okusuri-v2
-    cmds:
-      - pnpm lint:fix
-
-  install:frontend-v2:
-    desc: Install V2 dependencies
-    dir: okusuri-v2
-    cmds:
-      - pnpm install
-
-  # バックエンド
-  backend:
-    desc: Backend development and build tasks
-    cmds:
-      - echo "Backend tasks:"
-      - echo "  dev:backend           - Start Go backend development server"
-      - echo "  build:backend         - Build Go backend"
-      - echo "  build:lambda:api      - Build API Lambda container image (LWA)"
-      - echo "  build:lambda:notification - Build notification Lambda ZIP package"
-      - echo "  build:lambda          - Build both Lambda functions"
-      - echo "  test:backend          - Run Go backend tests"
-      - echo "  docker:build:backend  - Build backend Docker image"
-      - echo "  docker:run:backend    - Run backend Docker container"
-      - echo "  push:ecr:backend      - Push backend container to ECR"
-      - echo "  install:backend       - Install backend dependencies"
 
   dev:backend:
     desc: Start Go backend development server
@@ -117,175 +14,42 @@ tasks:
     cmds:
       - go run cmd/server/main.go
 
-  build:backend:
-    desc: Build Go backend
-    dir: backend
-    cmds:
-      - go build cmd/server/main.go
-
+  # ビルド用
   build:lambda:api:
-    desc: Build API Lambda container image (LWA)
-    dir: backend
+    desc: Build API Lambda container image
     cmds:
-      - |
-        echo "🐳 API用コンテナイメージをビルド中..."
-        docker build -t okusuri-backend:latest .
-        echo "✅ API用コンテナビルド完了: okusuri-backend:latest"
-    sources:
-      - Dockerfile
-      - .dockerignore
-      - ./**/*.go
-      - go.mod
-      - go.sum
+      - ./scripts/build-lambda-api.sh
 
   build:lambda:notification:
     desc: Build notification Lambda ZIP package
-    dir: notification
     cmds:
-      - |
-        echo "🔔 通知用Lambdaをビルド中..."
-        mkdir -p ../infra/dist/lambda
+      - ./scripts/build-lambda-notification.sh
 
-        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-          -a -installsuffix cgo \
-          -ldflags="-s -w" \
-          -o ../infra/dist/lambda/notification \
-          .
-
-        echo "📦 Lambdaパッケージを作成中..."
-        cd ../infra/dist/lambda
-        zip -j notification.zip notification
-
-        echo "🧹 クリーンアップ中..."
-        rm -f notification
-
-        echo "✅ 通知用Lambdaビルド完了: ../infra/dist/lambda/notification.zip"
-    sources:
-      - ./**/*.go
-      - go.mod
-      - go.sum
-    generates:
-      - '../infra/dist/lambda/notification.zip'
-
-  build:lambda:
-    desc: Build both Lambda functions (API container + notification ZIP)
-    deps: [build:lambda:api, build:lambda:notification]
-
-  test:backend:
-    desc: Run Go backend tests
-    dir: backend
+  # Terraform用
+  terraform:init:
+    desc: Initialize Terraform
+    dir: infra
     cmds:
-      - go test ./...
+      - terraform init
 
-  test:coverage:backend:
-    desc: Run Go backend tests with coverage
-    dir: backend
+  terraform:plan:
+    desc: Plan Terraform changes
+    dir: infra
+    deps: [terraform:init]
     cmds:
-      - go test -v -coverprofile=coverage.out ./...
-      - go tool cover -html=coverage.out -o coverage.html
-    generates:
-      - coverage.out
-      - coverage.html
+      - terraform plan
 
-  docker:build:backend:
-    desc: Build backend Docker image
+  terraform:apply:
+    desc: Apply Terraform changes
+    dir: infra
+    deps: [terraform:init]
+    cmds:
+      - terraform apply -auto-approve
+
+  # デプロイ用
+  deploy:backend:
+    desc: Deploy backend Lambda function
     deps: [build:lambda:api]
-
-  docker:run:backend:
-    desc: Run backend Docker container
-    deps: [docker:build:backend]
-    dir: backend
     cmds:
-      - docker run -p 8080:8080 --env-file .env okusuri-backend:latest
+      - ./scripts/deploy-backend.sh
 
-  push:ecr:backend:
-    desc: Push backend container to ECR
-    deps: [build:lambda:api]
-    dir: backend
-    cmds:
-      - |
-        echo "🚀 ECRにプッシュ中..."
-        # ECRログイン
-        aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin okusuri-backend
-        # タグ付け
-        docker tag okusuri-backend:latest okusuri-backend:latest
-        # プッシュ
-        docker push okusuri-backend:latest
-        echo "✅ ECRプッシュ完了"
-
-  install:backend:
-    desc: Install backend dependencies
-    dir: backend
-    cmds:
-      - go mod download
-      - go mod tidy
-
-  # 全体
-  all:
-    desc: All project tasks
-    cmds:
-      - echo "All project tasks:"
-      - echo "  frontend      - Frontend (Next.js) tasks"
-      - echo "  frontend-v2   - Frontend V2 (Vite) tasks"
-      - echo "  backend       - Backend (Go) tasks"
-      - echo "  install:all   - Install all dependencies"
-      - echo "  clean         - Clean all build artifacts"
-      - echo "  status        - Show project status"
-
-  install:all:
-    desc: Install all project dependencies
-    cmds:
-      - task: install:frontend
-      - task: install:frontend-v2
-      - task: install:backend
-
-  # ユーティリティ
-  clean:
-    desc: Clean all build artifacts
-    cmds:
-      - rm -rf frontend/.next
-      - rm -rf frontend/out
-      - rm -rf okusuri-v2/dist
-      - rm -rf backend/main
-      - rm -rf infra/dist
-      - echo "Cleanup completed"
-
-  clean:backend:
-    desc: Clean backend build artifacts
-    dir: backend
-    cmds:
-      - rm -rf ./bin
-      - rm -rf ./tmp
-      - rm -f coverage.out coverage.html
-      - docker rmi okusuri-backend:latest 2>/dev/null || true
-
-  status:
-    desc: Show project status
-    cmds:
-      - echo "=== Okusuri Project Status ==="
-      - echo "Frontend (Next.js):"
-      - cd frontend
-      - pnpm list --depth=0 | head -1
-      - cd ..
-      - echo "Frontend V2 (Vite):"
-      - cd okusuri-v2
-      - pnpm list --depth=0 | head -1
-      - cd ..
-      - echo "Backend (Go):"
-      - cd backend
-      - go version
-      - cd ..
-      - echo "================================"
-
-  # ヘルプ
-  help:
-    desc: Show available tasks
-    cmds:
-      - echo "Available task groups:"
-      - echo "  task frontend      - Frontend (Next.js) tasks"
-      - echo "  task frontend-v2   - Frontend V2 (Vite) tasks"
-      - echo "  task backend       - Backend (Go) tasks"
-      - echo "  task all           - All project tasks"
-      - echo "  task help          - Show this help"
-      - echo ""
-      - echo "For specific tasks, use: task --list"
