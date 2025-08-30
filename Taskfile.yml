@@ -1,0 +1,128 @@
+version: '3'
+
+tasks:
+  # 開発サーバー起動
+  dev:frontend:
+    desc: Start Next.js development server
+    dir: frontend
+    cmds:
+      - pnpm dev
+
+  dev:v2:
+    desc: Start Vite development server
+    dir: okusuri-v2
+    cmds:
+      - pnpm dev
+
+  # ビルド
+  build:frontend:
+    desc: Build Next.js project
+    dir: frontend
+    cmds:
+      - pnpm build
+
+  build:v2:
+    desc: Build Vite project
+    dir: okusuri-v2
+    cmds:
+      - pnpm build
+
+  # リント・フォーマット
+  lint:frontend:
+    desc: Lint Next.js project
+    dir: frontend
+    cmds:
+      - pnpm lint
+
+  lint:v2:
+    desc: Lint Vite project
+    dir: okusuri-v2
+    cmds:
+      - pnpm lint
+
+  lint:fix:frontend:
+    desc: Fix linting issues in Next.js project
+    dir: frontend
+    cmds:
+      - pnpm lint:fix
+
+  lint:fix:v2:
+    desc: Fix linting issues in Vite project
+    dir: okusuri-v2
+    cmds:
+      - pnpm lint:fix
+
+  # サーバー起動・プレビュー
+  start:frontend:
+    desc: Start Next.js production server
+    dir: frontend
+    cmds:
+      - pnpm start
+
+  preview:v2:
+    desc: Preview Vite build
+    dir: okusuri-v2
+    cmds:
+      - pnpm preview
+
+  # 依存関係インストール
+  install:frontend:
+    desc: Install frontend dependencies
+    dir: frontend
+    cmds:
+      - pnpm install
+
+  install:v2:
+    desc: Install V2 dependencies
+    dir: okusuri-v2
+    cmds:
+      - pnpm install
+
+  install:all:
+    desc: Install all project dependencies
+    cmds:
+      - task: install:frontend
+      - task: install:v2
+      - echo "Installing backend dependencies..."
+      - cd backend && go mod download
+
+  # バックエンド関連
+  dev:backend:
+    desc: Start Go backend development server
+    dir: backend
+    cmds:
+      - go run cmd/server/main.go
+
+  build:backend:
+    desc: Build Go backend
+    dir: backend
+    cmds:
+      - go build cmd/server/main.go
+
+  test:backend:
+    desc: Run Go backend tests
+    dir: backend
+    cmds:
+      - go test ./...
+
+  # ユーティリティ
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf frontend/.next
+      - rm -rf frontend/out
+      - rm -rf okusuri-v2/dist
+      - rm -rf backend/main
+      - echo "Cleanup completed"
+
+  status:
+    desc: Show project status
+    cmds:
+      - echo "=== Okusuri Project Status ==="
+      - echo "Frontend (Next.js):"
+      - cd frontend && pnpm list --depth=0 | head -1
+      - echo "V2 (Vite):"
+      - cd okusuri-v2 && pnpm list --depth=0 | head -1
+      - echo "Backend (Go):"
+      - cd backend && go version
+      - echo "================================"

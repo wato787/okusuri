@@ -11,74 +11,115 @@
 - **`infra`** - インフラ関連のドキュメント
 - **`docs`** - 設計・Terraformドキュメント
 
-## 開発環境のセットアップ
-
-### 前提条件
+## 前提条件
 
 - Node.js 18 以上
 - pnpm 8 以上
 - Go 1.24 以上
 - PostgreSQL
+- [Task](https://taskfile.dev/) (プロジェクト管理ツール)
 
-### インストール
+## セットアップ
+
+### Taskのインストール
 
 ```bash
-# フロントエンドの依存関係をインストール
-cd frontend && pnpm install
-cd ../okusuri-v2 && pnpm install
+# macOS (Homebrew)
+brew install go-task
 
-# バックエンドの依存関係をインストール
-cd ../backend && go mod download
+# その他のプラットフォーム
+# https://taskfile.dev/installation/
 ```
+
+### 依存関係のインストール
+
+```bash
+# 全プロジェクトの依存関係をインストール
+task install:all
+
+# 個別にインストール
+task install:frontend    # Next.js
+task install:v2          # Vite + React
+```
+
+## 開発
 
 ### 開発サーバーの起動
 
 ```bash
 # フロントエンド（Next.js）
-pnpm dev:frontend
+task dev:frontend
 
 # V2（Vite + React）
-pnpm dev:v2
+task dev:v2
 
 # バックエンド（Go）
-cd backend && go run cmd/server/main.go
-# または
-cd backend && make dev
+task dev:backend
 ```
 
 ### ビルド
 
 ```bash
 # フロントエンド
-pnpm build:frontend
+task build:frontend
 
 # V2
-pnpm build:v2
+task build:v2
 
 # バックエンド
-cd backend && go build cmd/server/main.go
+task build:backend
 ```
 
 ### リント・フォーマット
 
 ```bash
 # フロントエンド
-pnpm lint:frontend
-pnpm lint:fix:frontend
+task lint:frontend
+task lint:fix:frontend
 
 # V2
-pnpm lint:v2
-pnpm lint:fix:v2
+task lint:v2
+task lint:fix:v2
+```
 
+### テスト
+
+```bash
 # バックエンド
-cd backend && golangci-lint run
+task test:backend
+```
+
+## その他のコマンド
+
+```bash
+# プロジェクトの状態確認
+task status
+
+# ビルド成果物のクリーンアップ
+task clean
+
+# 本番サーバー起動
+task start:frontend
+
+# Viteプレビュー
+task preview:v2
+```
+
+## 利用可能なタスク
+
+```bash
+# 全タスクを表示
+task --list
+
+# タスクの詳細を表示
+task --list-all
 ```
 
 ## 開発ワークフロー
 
 1. 各プロジェクトは独立したディレクトリで開発
-2. ルートの `package.json` でフロントエンドプロジェクトの操作を簡素化
-3. バックエンドはGoの標準的な開発フローを使用
+2. Taskfileでプロジェクト全体の操作を統一
+3. 各プロジェクトの依存関係は個別に管理
 
 ## 技術スタック
 
